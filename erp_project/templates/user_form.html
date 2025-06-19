@@ -32,6 +32,12 @@
       <div class="invalid-feedback">{{ error }}</div>
     {% endfor %}
   </div>
+  {% if require_current %}
+  <div class="mb-3">
+    <label for="id_current_password" class="form-label">Current Password</label>
+    <input type="password" name="current_password" id="id_current_password" class="form-control" required>
+  </div>
+  {% endif %}
   {% if form.password1 %}
   <div class="mb-3">
     <label for="id_password1" class="form-label">Password</label>

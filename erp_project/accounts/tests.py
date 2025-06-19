@@ -202,22 +202,128 @@ class PasswordChangeTests(TestCase):
 
     def test_change_own_password(self):
         self.client.login(username='alice', password='pass')
-        resp = self.client.post(reverse('user_change_password', args=[self.user.id]),
-                               {'password1': 'newpass', 'password2': 'newpass'})
+        resp = self.client.post(
+            reverse('user_change_password', args=[self.user.id]),
+            {
+                'current_password': 'pass',
+                'password1': 'newpass',
+                'password2': 'newpass',
+            },
+        )
         self.assertEqual(resp.status_code, 302)
         self.client.logout()
         self.assertTrue(self.client.login(username='alice', password='newpass'))
 
     def test_change_other_requires_permission(self):
         self.client.login(username='alice', password='pass')
-        resp = self.client.post(reverse('user_change_password', args=[self.other.id]),
-                               {'password1': 'x', 'password2': 'x'})
+        resp = self.client.post(
+            reverse('user_change_password', args=[self.other.id]),
+            {'password1': 'x', 'password2': 'x'},
+        )
         self.assertEqual(resp.status_code, 403)
         perm = Permission.objects.get_or_create(codename='user_can_change_password')[0]
         self.role.permissions.add(perm)
-        resp2 = self.client.post(reverse('user_change_password', args=[self.other.id]),
-                                {'password1': 'x2', 'password2': 'x2'})
+        resp2 = self.client.post(
+            reverse('user_change_password', args=[self.other.id]),
+            {'password1': 'x2', 'password2': 'x2'},
+        )
         self.assertEqual(resp2.status_code, 302)
         self.client.logout()
         self.assertTrue(self.client.login(username='other', password='x2'))
+
+    def test_change_own_password_requires_current(self):
+        self.client.login(username='alice', password='pass')
+        resp = self.client.post(
+            reverse('user_change_password', args=[self.user.id]),
+            {'current_password': 'wrong', 'password1': 'bad', 'password2': 'bad'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('pass'))
+
+    def test_change_other_logs_action(self):
+        perm = Permission.objects.get_or_create(codename='user_can_change_password')[0]
+        self.role.permissions.add(perm)
+        self.client.login(username='alice', password='pass')
+        self.client.post(
+            reverse('user_change_password', args=[self.other.id]),
+            {'password1': 'x2', 'password2': 'x2'},
+        )
+        from accounts.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(actor=self.user, target_user=self.other, action='password_change').exists())
+
+
+class UserEditSecurityTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='EditCo', code='EC', address='')
+        role = Role.objects.create(name='Staff', company=self.company)
+        self.user = User.objects.create_user(username='charlie', password='pass', company=self.company)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.role = role
+
+    def test_edit_self_denied_without_permission(self):
+        self.client.login(username='charlie', password='pass')
+        resp = self.client.get(reverse('user_edit', args=[self.user.id]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_edit_self_requires_current_password(self):
+        perm = Permission.objects.get_or_create(codename='change_user')[0]
+        self.role.permissions.add(perm)
+        self.client.login(username='charlie', password='pass')
+        resp = self.client.post(
+            reverse('user_edit', args=[self.user.id]),
+            {
+                'username': 'newcharlie',
+                'email': self.user.email,
+                'first_name': '',
+                'last_name': '',
+                'current_password': 'wrong',
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'charlie')
+
+    def test_edit_self_with_password(self):
+        perm = Permission.objects.get_or_create(codename='change_user')[0]
+        self.role.permissions.add(perm)
+        self.client.login(username='charlie', password='pass')
+        resp = self.client.post(
+            reverse('user_edit', args=[self.user.id]),
+            {
+                'username': 'newcharlie',
+                'email': self.user.email,
+                'first_name': '',
+                'last_name': '',
+                'current_password': 'pass',
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'newcharlie')
+
+
+class ButtonVisibilityTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='BtnCo', code='BC', address='')
+        staff_role = Role.objects.create(name='Staff', company=self.company)
+        admin_role = Role.objects.create(name='Admin', company=self.company)
+        perm_edit = Permission.objects.get_or_create(codename='change_user')[0]
+        perm_pass = Permission.objects.get_or_create(codename='user_can_change_password')[0]
+        view_perm = Permission.objects.get_or_create(codename='view_user')[0]
+        admin_role.permissions.add(perm_edit, perm_pass, view_perm)
+        staff_role.permissions.add(view_perm)
+        self.user = User.objects.create_user(username='dave', password='pass', company=self.company)
+        self.admin = User.objects.create_superuser(username='admin2', password='pass')
+        self.admin.company = self.company
+        self.admin.save()
+        UserRole.objects.create(user=self.user, role=staff_role, company=self.company)
+        UserRole.objects.create(user=self.admin, role=admin_role, company=self.company)
+
+    def test_buttons_hidden_without_permission(self):
+        self.client.login(username='dave', password='pass')
+        resp = self.client.get(reverse('user_detail', args=[self.user.id]))
+        self.assertNotContains(resp, reverse('user_edit', args=[self.user.id]))
+        self.assertContains(resp, reverse('user_change_password', args=[self.user.id]))
+
 
