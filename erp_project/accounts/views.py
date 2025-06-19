@@ -81,6 +81,8 @@ class CompanyUserCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     def form_valid(self, form):
         company = get_object_or_404(Company, pk=self.kwargs['company_id'])
         user = form.save(commit=False)
+        # Ensure password is hashed before saving
+        user.set_password(form.cleaned_data['password1'])
         user.company = company
         user.save()
         admin_role = Role.objects.get(name='Admin')
