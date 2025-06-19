@@ -41,23 +41,6 @@ from .models import Role, UserRole, Permission
 
 User = get_user_model()
 
-class AdminRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        user = self.request.user
-        if user.is_superuser:
-            return True
-        company_id = self.kwargs.get('company_id')
-        if company_id and user.company_id != int(company_id):
-            return False
-        target_pk = self.kwargs.get('pk')
-        if target_pk:
-            target_user = get_object_or_404(User, pk=target_pk)
-            if target_user.company_id != user.company_id:
-                return False
-            if target_user.pk == user.pk:
-                return True
-        return UserRole.objects.filter(user=user, role__name='Admin', company=user.company).exists()
-
 @method_decorator(require_permission('view_company'), name='dispatch')
 class CompanyDetailView(LoginRequiredMixin, SuperuserRequiredMixin, DetailView):
     model = Company
@@ -71,7 +54,7 @@ class CompanyUpdateView(LoginRequiredMixin, SuperuserRequiredMixin, UpdateView):
     success_url = reverse_lazy('company_list')
 
 @method_decorator(require_permission('view_user'), name='dispatch')
-class UserListView(LoginRequiredMixin, AdminRequiredMixin, TemplateView):
+class UserListView(LoginRequiredMixin, TemplateView):
     template_name = 'user_list.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -125,12 +108,12 @@ class CompanyUserCreateView(View):
         )
 
 @method_decorator(require_permission('view_user'), name='dispatch')
-class UserDetailView(LoginRequiredMixin, AdminRequiredMixin, DetailView):
+class UserDetailView(LoginRequiredMixin, DetailView):
     model = User
     template_name = 'user_detail.html'
 
 @method_decorator(require_permission('change_user'), name='dispatch')
-class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
+class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     fields = ['username', 'email', 'first_name', 'last_name']
     template_name = 'user_form.html'
@@ -155,7 +138,7 @@ class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
         return response
 
 @method_decorator(require_permission('change_user'), name='dispatch')
-class UserToggleActiveView(LoginRequiredMixin, AdminRequiredMixin, View):
+class UserToggleActiveView(LoginRequiredMixin, View):
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         user.is_active = not user.is_active
