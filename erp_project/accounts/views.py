@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 from .models import Company
 from django.utils.decorators import method_decorator
-from .utils import require_permission, log_action
+from .utils import require_permission, log_action, user_has_permission
 
 class SuperuserRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -111,6 +111,23 @@ class CompanyUserCreateView(View):
 class UserDetailView(LoginRequiredMixin, DetailView):
     model = User
     template_name = 'user_detail.html'
+    # Avoid clashing with the request "user" context variable
+    context_object_name = 'target'
+
+    def get_context_data(self, **kwargs):
+        """Inject permission flags for template button visibility."""
+        context = super().get_context_data(**kwargs)
+        target = context['target']
+        req_user = self.request.user
+        context['can_edit'] = user_has_permission(req_user, 'change_user')
+        context['can_change_password'] = (
+            user_has_permission(req_user, 'user_can_change_password')
+            or req_user.pk == target.pk
+        )
+        context['can_toggle'] = (
+            user_has_permission(req_user, 'change_user') and req_user.pk != target.pk
+        )
+        return context
 
 @method_decorator(require_permission('change_user'), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, UpdateView):
