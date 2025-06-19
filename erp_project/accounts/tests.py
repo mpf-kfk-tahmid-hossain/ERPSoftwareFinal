@@ -132,3 +132,32 @@ class IntegrationFlowTests(TestCase):
         dash_again = self.client.get(reverse('dashboard'))
         self.assertEqual(dash_again.status_code, 302)
 
+
+class CompanyUserLoginTests(TestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(username='admin', password='pass')
+        self.company = Company.objects.create(name='NavCo', code='NC', address='')
+        self.admin_role = Role.objects.get(name='Admin')
+
+    def test_user_add_hashes_password(self):
+        self.client.login(username='admin', password='pass')
+        resp = self.client.post(reverse('user_add', args=[self.company.id]), {
+            'username': 'coadmin',
+            'password1': 'ComplexPass123',
+            'password2': 'ComplexPass123'
+        })
+        if resp.status_code != 302:
+            self.fail(f"Form errors: {resp.context['form'].errors}")
+        user = User.objects.get(username='coadmin')
+        self.assertTrue(user.password.startswith('pbkdf2_'))
+
+    def test_company_user_navbar_and_user_list_access(self):
+        user = User.objects.create_user(username='emp', password='emp123', company=self.company)
+        UserRole.objects.create(user=user, role=self.admin_role, company=self.company)
+        login = self.client.login(username='emp', password='emp123')
+        self.assertTrue(login)
+        dash = self.client.get(reverse('dashboard'))
+        self.assertContains(dash, reverse('user_list', args=[self.company.id]))
+        list_resp = self.client.get(reverse('user_list', args=[self.company.id]))
+        self.assertEqual(list_resp.status_code, 200)
+
