@@ -125,3 +125,6 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 
 Navigation updated to include Users link for company admins.
 Logout view updated to accept GET requests so the navbar logout button works.
+User creation now supports assigning or creating roles with permissions.
+Permission checks unified via `@require_permission` decorator.
+Added change password flow with self-service capability.

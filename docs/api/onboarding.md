@@ -68,4 +68,13 @@
 ## Session
 - **Logout URL:** `/logout/` via `GET`.
 
+## Change Password
+- **URL:** `/users/<id>/password/`
+- **Method:** `POST`
+- **Auth:** Logged in user
+- **Permissions:**
+  - Users can change their own password.
+  - `user_can_change_password` required to change another user's password.
+- **Payload:** `password1`, `password2`
+
 
