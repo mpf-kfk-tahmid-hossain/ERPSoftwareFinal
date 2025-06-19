@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Companies{% endblock %}
+{% block content %}
+<h2>Companies</h2>
+<table class="table">
+  <thead><tr><th>Name</th><th>Code</th><th>Address</th></tr></thead>
+  <tbody>
+    {% for c in companies %}
+    <tr><td>{{ c.name }}</td><td>{{ c.code }}</td><td>{{ c.address }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
