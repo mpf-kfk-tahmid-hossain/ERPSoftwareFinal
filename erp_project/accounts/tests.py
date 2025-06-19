@@ -46,6 +46,16 @@ class OnboardingTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], '/')
 
+    def test_superuser_can_logout_via_button(self):
+        self.client.login(username='admin', password='pass')
+        dashboard = self.client.get(reverse('dashboard'))
+        self.assertContains(dashboard, reverse('logout'))
+        logout_response = self.client.get(reverse('logout'))
+        self.assertEqual(logout_response.status_code, 302)
+        self.assertEqual(logout_response['Location'], reverse('login'))
+        follow_up = self.client.get(reverse('dashboard'))
+        self.assertEqual(follow_up.status_code, 302)
+
 class PermissionTests(TestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username='admin', password='pass')
