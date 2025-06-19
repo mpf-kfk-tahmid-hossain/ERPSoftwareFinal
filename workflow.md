@@ -79,42 +79,42 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 
 | #  | Task                                                          | Status            |
 | -- | ------------------------------------------------------------- | ----------------- |
-| 1  | **Design & Create “Admin” Role (if not seeded)**              | ⬜ Not Implemented |
-| 2  | **Superuser Login API**                                       | ⬜ Not Implemented |
-| 3  | **Superuser Login UI (Form)**                                 | ⬜ Not Implemented |
-| 4  | **Company List API**                                          | ⬜ Not Implemented |
-| 5  | **Company List UI (Table/View)**                              | ⬜ Not Implemented |
-| 6  | **Company Registration API**                                  | ⬜ Not Implemented |
-| 7  | **Company Registration UI (Form)**                            | ⬜ Not Implemented |
-| 8  | **Company Detail API**                                        | ⬜ Not Implemented |
-| 9  | **Company Detail UI (View)**                                  | ⬜ Not Implemented |
-| 10 | **Company Update API**                                        | ⬜ Not Implemented |
-| 11 | **Company Update UI (Form/Edit Page)**                        | ⬜ Not Implemented |
-| 12 | **User List API (per company)**                               | ⬜ Not Implemented |
-| 13 | **User List UI (Table/View)**                                 | ⬜ Not Implemented |
-| 14 | **Company Admin User Creation API**                           | ⬜ Not Implemented |
-| 15 | **Company Admin User Creation UI (Form)**                     | ⬜ Not Implemented |
-| 16 | **User Detail API**                                           | ⬜ Not Implemented |
-| 17 | **User Detail UI (Profile/View)**                             | ⬜ Not Implemented |
-| 18 | **User Update API**                                           | ⬜ Not Implemented |
-| 19 | **User Update UI (Edit Profile/Page)**                        | ⬜ Not Implemented |
-| 20 | **Deactivate/Reactivate User API (Soft Delete)**              | ⬜ Not Implemented |
-| 21 | **Deactivate/Reactivate User UI (Button/Action)**             | ⬜ Not Implemented |
-| 22 | **Assign Admin Role to New User (user\_role) API**            | ⬜ Not Implemented |
-| 23 | **Assign Admin Role UI (Role Select/Assign)**                 | ⬜ Not Implemented |
-| 24 | **Company Admin Login API**                                   | ⬜ Not Implemented |
-| 25 | **Company Admin Login UI (Form)**                             | ⬜ Not Implemented |
-| 26 | **Session Management (Login/Logout) API**                     | ⬜ Not Implemented |
-| 27 | **Session Management (Login/Logout) UI**                      | ⬜ Not Implemented |
-| 28 | **Whoami (Current User) API**                                 | ⬜ Not Implemented |
-| 29 | **Company Admin Dashboard API**                               | ⬜ Not Implemented |
-| 30 | **Company Admin Dashboard UI (Welcome View)**                 | ⬜ Not Implemented |
-| 31 | **Permission/Role Enforcement on All APIs**                   | ⬜ Not Implemented |
-| 32 | **Permission/Role Enforcement on All UI (Hide/Show by role)** | ⬜ Not Implemented |
-| 33 | **API Documentation for All Above**                           | ⬜ Not Implemented |
-| 34 | **UI/Integration Tests for Full Flow**                        | ⬜ Not Implemented |
-| 35 | **Permissions Tests (Unauthorized Access Prevention)**        | ⬜ Not Implemented |
-| 36 | **Permission Denied/Error Views (UI & API)**                  | ⬜ Not Implemented |
+| 1  | **Design & Create “Admin” Role (if not seeded)**              | ✅ Implemented by Agent |
+| 2  | **Superuser Login API**                                       | ✅ Implemented by Agent |
+| 3  | **Superuser Login UI (Form)**                                 | ✅ Implemented by Agent |
+| 4  | **Company List API**                                          | ✅ Implemented by Agent |
+| 5  | **Company List UI (Table/View)**                              | ✅ Implemented by Agent |
+| 6  | **Company Registration API**                                  | ✅ Implemented by Agent |
+| 7  | **Company Registration UI (Form)**                            | ✅ Implemented by Agent |
+| 8  | **Company Detail API**                                        | ✅ Implemented by Agent |
+| 9  | **Company Detail UI (View)**                                  | ✅ Implemented by Agent |
+| 10 | **Company Update API**                                        | ✅ Implemented by Agent |
+| 11 | **Company Update UI (Form/Edit Page)**                        | ✅ Implemented by Agent |
+| 12 | **User List API (per company)**                               | ✅ Implemented by Agent |
+| 13 | **User List UI (Table/View)**                                 | ✅ Implemented by Agent |
+| 14 | **Company Admin User Creation API**                           | ✅ Implemented by Agent |
+| 15 | **Company Admin User Creation UI (Form)**                     | ✅ Implemented by Agent |
+| 16 | **User Detail API**                                           | ✅ Implemented by Agent |
+| 17 | **User Detail UI (Profile/View)**                             | ✅ Implemented by Agent |
+| 18 | **User Update API**                                           | ✅ Implemented by Agent |
+| 19 | **User Update UI (Edit Profile/Page)**                        | ✅ Implemented by Agent |
+| 20 | **Deactivate/Reactivate User API (Soft Delete)**              | ✅ Implemented by Agent |
+| 21 | **Deactivate/Reactivate User UI (Button/Action)**             | ✅ Implemented by Agent |
+| 22 | **Assign Admin Role to New User (user\_role) API**            | ✅ Implemented by Agent |
+| 23 | **Assign Admin Role UI (Role Select/Assign)**                 | ✅ Implemented by Agent |
+| 24 | **Company Admin Login API**                                   | ✅ Implemented by Agent |
+| 25 | **Company Admin Login UI (Form)**                             | ✅ Implemented by Agent |
+| 26 | **Session Management (Login/Logout) API**                     | ✅ Implemented by Agent |
+| 27 | **Session Management (Login/Logout) UI**                      | ✅ Implemented by Agent |
+| 28 | **Whoami (Current User) API**                                 | ✅ Implemented by Agent |
+| 29 | **Company Admin Dashboard API**                               | ✅ Implemented by Agent |
+| 30 | **Company Admin Dashboard UI (Welcome View)**                 | ✅ Implemented by Agent |
+| 31 | **Permission/Role Enforcement on All APIs**                   | ✅ Implemented by Agent |
+| 32 | **Permission/Role Enforcement on All UI (Hide/Show by role)** | ✅ Implemented by Agent |
+| 33 | **API Documentation for All Above**                           | ✅ Implemented by Agent |
+| 34 | **UI/Integration Tests for Full Flow**                        | ✅ Implemented by Agent |
+| 35 | **Permissions Tests (Unauthorized Access Prevention)**        | ✅ Implemented by Agent |
+| 36 | **Permission Denied/Error Views (UI & API)**                  | ✅ Implemented by Agent |
 
 ---
 
@@ -123,3 +123,4 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 * **Check** each item (`✅ Implemented`) as you finish.
 * This covers all **CRUD**, **specialized**, and **auth/session** views for the onboarding workflow.
 
+Navigation updated to include Users link for company admins.

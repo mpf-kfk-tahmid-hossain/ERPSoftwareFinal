@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h2>Users for {{ company.name }}</h2>
+<a href="{% url 'user_add' company.id %}" class="btn btn-success mb-2">Add User</a>
+<table class="table">
+  <thead><tr><th>Username</th><th>Email</th><th>Active</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr>
+      <td><a href="{% url 'user_detail' u.id %}">{{ u.username }}</a></td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.is_active }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
