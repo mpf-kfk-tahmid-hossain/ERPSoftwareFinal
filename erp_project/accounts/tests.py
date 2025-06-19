@@ -326,4 +326,12 @@ class ButtonVisibilityTests(TestCase):
         self.assertNotContains(resp, reverse('user_edit', args=[self.user.id]))
         self.assertContains(resp, reverse('user_change_password', args=[self.user.id]))
 
+    def test_admin_sees_management_buttons(self):
+        """Admin user should see edit, password, and toggle controls."""
+        self.client.login(username='admin2', password='pass')
+        resp = self.client.get(reverse('user_detail', args=[self.user.id]))
+        self.assertContains(resp, reverse('user_edit', args=[self.user.id]))
+        self.assertContains(resp, reverse('user_change_password', args=[self.user.id]))
+        self.assertContains(resp, reverse('user_toggle', args=[self.user.id]))
+
 
