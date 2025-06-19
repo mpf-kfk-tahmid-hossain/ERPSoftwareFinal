@@ -6,6 +6,7 @@
 <p>Name: {{ object.first_name }} {{ object.last_name }}</p>
 <p>Status: {{ object.is_active|yesno:"Active,Inactive" }}</p>
 <a href="{% url 'user_edit' object.id %}" class="btn btn-primary">Edit</a>
+<a href="{% url 'user_change_password' object.id %}" class="btn btn-secondary">Change Password</a>
 <form method="post" action="{% url 'user_toggle' object.id %}" class="d-inline">
   {% csrf_token %}
   <button type="submit" class="btn btn-warning">{% if object.is_active %}Deactivate{% else %}Reactivate{% endif %}</button>

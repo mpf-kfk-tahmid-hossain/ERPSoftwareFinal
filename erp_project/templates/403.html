@@ -2,7 +2,7 @@
 {% block title %}Permission Denied{% endblock %}
 {% block content %}
 <div class="alert alert-danger" role="alert">
-  You do not have permission to perform this action.
+  You do not have permission to perform this action{% if missing_permission %}: {{ missing_permission }}{% endif %}.
 </div>
 {% endblock %}
 

@@ -1,7 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from .models import Company, Role, UserRole
+from .models import Company, Role, UserRole, Permission
 
 User = get_user_model()
 
@@ -138,6 +138,8 @@ class CompanyUserLoginTests(TestCase):
         self.superuser = User.objects.create_superuser(username='admin', password='pass')
         self.company = Company.objects.create(name='NavCo', code='NC', address='')
         self.admin_role = Role.objects.get(name='Admin')
+        view_perm = Permission.objects.get_or_create(codename='view_user')[0]
+        self.admin_role.permissions.add(view_perm)
 
     def test_user_add_hashes_password(self):
         self.client.login(username='admin', password='pass')
@@ -160,4 +162,62 @@ class CompanyUserLoginTests(TestCase):
         self.assertContains(dash, reverse('user_list', args=[self.company.id]))
         list_resp = self.client.get(reverse('user_list', args=[self.company.id]))
         self.assertEqual(list_resp.status_code, 200)
+
+
+class PermissionDecoratorTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='PermCo', code='PC', address='')
+        self.superuser = User.objects.create_superuser(username='admin', password='pass')
+        self.user = User.objects.create_user(username='bob', password='pass', company=self.company)
+        self.role = Role.objects.create(name='Staff', company=self.company)
+        UserRole.objects.create(user=self.user, role=self.role, company=self.company)
+
+    def test_superuser_creating_user(self):
+        self.client.login(username='admin', password='pass')
+        resp = self.client.get(reverse('user_add', args=[self.company.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_normal_user_with_permission_creating_user(self):
+        perm = Permission.objects.get_or_create(codename='add_user')[0]
+        self.role.permissions.add(perm)
+        self.client.login(username='bob', password='pass')
+        resp = self.client.get(reverse('user_add', args=[self.company.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_user_denied_without_permission(self):
+        self.client.login(username='bob', password='pass')
+        resp = self.client.get(reverse('user_add', args=[self.company.id]))
+        self.assertEqual(resp.status_code, 403)
+
+
+class PasswordChangeTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='PassCo', code='PCO', address='')
+        role = Role.objects.create(name='Staff', company=self.company)
+        self.user = User.objects.create_user(username='alice', password='pass', company=self.company)
+        self.other = User.objects.create_user(username='other', password='pass', company=self.company)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        UserRole.objects.create(user=self.other, role=role, company=self.company)
+        self.role = role
+
+    def test_change_own_password(self):
+        self.client.login(username='alice', password='pass')
+        resp = self.client.post(reverse('user_change_password', args=[self.user.id]),
+                               {'password1': 'newpass', 'password2': 'newpass'})
+        self.assertEqual(resp.status_code, 302)
+        self.client.logout()
+        self.assertTrue(self.client.login(username='alice', password='newpass'))
+
+    def test_change_other_requires_permission(self):
+        self.client.login(username='alice', password='pass')
+        resp = self.client.post(reverse('user_change_password', args=[self.other.id]),
+                               {'password1': 'x', 'password2': 'x'})
+        self.assertEqual(resp.status_code, 403)
+        perm = Permission.objects.get_or_create(codename='user_can_change_password')[0]
+        self.role.permissions.add(perm)
+        resp2 = self.client.post(reverse('user_change_password', args=[self.other.id]),
+                                {'password1': 'x2', 'password2': 'x2'})
+        self.assertEqual(resp2.status_code, 302)
+        self.client.logout()
+        self.assertTrue(self.client.login(username='other', password='x2'))
 

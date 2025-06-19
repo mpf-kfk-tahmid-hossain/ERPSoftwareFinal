@@ -21,6 +21,7 @@ from accounts.views import (
     CustomLoginView, DashboardView, CompanyCreateView, CompanyListView,
     CompanyDetailView, CompanyUpdateView, UserListView, CompanyUserCreateView,
     UserDetailView, UserUpdateView, UserToggleActiveView, WhoAmIView, DashboardAPI,
+    change_password_view,
 )
 
 urlpatterns = [
@@ -36,6 +37,7 @@ urlpatterns = [
     path('users/<int:pk>/', UserDetailView.as_view(), name='user_detail'),
     path('users/<int:pk>/edit/', UserUpdateView.as_view(), name='user_edit'),
     path('users/<int:pk>/toggle/', UserToggleActiveView.as_view(), name='user_toggle'),
+    path('users/<int:pk>/password/', change_password_view, name='user_change_password'),
     path('api/whoami/', WhoAmIView.as_view(), name='whoami'),
     path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
     path('', DashboardView.as_view(), name='dashboard'),
