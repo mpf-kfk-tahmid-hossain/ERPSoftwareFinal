@@ -124,3 +124,4 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 * This covers all **CRUD**, **specialized**, and **auth/session** views for the onboarding workflow.
 
 Navigation updated to include Users link for company admins.
+Logout view updated to accept GET requests so the navbar logout button works.

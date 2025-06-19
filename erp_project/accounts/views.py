@@ -30,7 +30,8 @@ class CustomLoginView(LoginView):
 from django.views.generic import DetailView, UpdateView, ListView, View
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
+from django.conf import settings
 from .forms import CompanyUserCreationForm
 from .models import Role, UserRole
 
@@ -124,4 +125,12 @@ def permission_denied_view(request, exception):
         return JsonResponse({'detail': 'Permission denied'}, status=403)
     template = loader.get_template('403.html')
     return HttpResponseForbidden(template.render({}, request))
+
+
+class CustomLogoutView(View):
+    """Allow GET logout to support navigation link."""
+
+    def get(self, request):
+        logout(request)
+        return redirect(settings.LOGOUT_REDIRECT_URL)
 
