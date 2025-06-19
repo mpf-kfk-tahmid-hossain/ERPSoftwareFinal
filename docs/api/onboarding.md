@@ -45,6 +45,11 @@
 ## Update User
 - **URL:** `/users/<id>/edit/`
 - **Method:** `POST`
+- **Permissions:**
+  - `change_user` permission required for all edits.
+  - Current password must be supplied when editing your own profile.
+- **Payload:** standard user fields (`username`, `email`, etc.) plus `current_password` when self-editing.
+- **Audit:** all user edits are recorded in `AuditLog` entries.
 
 ## Toggle User Active
 - **URL:** `/users/<id>/toggle/`
@@ -75,6 +80,9 @@
 - **Permissions:**
   - Users can change their own password.
   - `user_can_change_password` required to change another user's password.
-- **Payload:** `password1`, `password2`
+- **Payload:**
+  - `current_password` (required when changing your own password)
+  - `password1`, `password2`
+- **Audit:** password changes are recorded in `AuditLog`.
 
 

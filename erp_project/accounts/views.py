@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 from .models import Company
 from django.utils.decorators import method_decorator
-from .utils import require_permission
+from .utils import require_permission, log_action
 
 class SuperuserRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -54,6 +54,8 @@ class AdminRequiredMixin(UserPassesTestMixin):
             target_user = get_object_or_404(User, pk=target_pk)
             if target_user.company_id != user.company_id:
                 return False
+            if target_user.pk == user.pk:
+                return True
         return UserRole.objects.filter(user=user, role__name='Admin', company=user.company).exists()
 
 @method_decorator(require_permission('view_company'), name='dispatch')
@@ -130,10 +132,27 @@ class UserDetailView(LoginRequiredMixin, AdminRequiredMixin, DetailView):
 @method_decorator(require_permission('change_user'), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     model = User
-    fields = ['email', 'first_name', 'last_name']
+    fields = ['username', 'email', 'first_name', 'last_name']
     template_name = 'user_form.html'
+
     def get_success_url(self):
         return reverse_lazy('user_detail', kwargs={'pk': self.kwargs['pk']})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['require_current'] = self.request.user.pk == self.get_object().pk
+        return context
+
+    def form_valid(self, form):
+        target = self.get_object()
+        if self.request.user.pk == target.pk:
+            current = self.request.POST.get('current_password')
+            if not target.check_password(current or ''):
+                form.add_error(None, 'Current password incorrect')
+                return self.form_invalid(form)
+        response = super().form_valid(form)
+        log_action(self.request.user, 'user_update', target)
+        return response
 
 @method_decorator(require_permission('change_user'), name='dispatch')
 class UserToggleActiveView(LoginRequiredMixin, AdminRequiredMixin, View):
@@ -148,17 +167,24 @@ class UserToggleActiveView(LoginRequiredMixin, AdminRequiredMixin, View):
 def change_password_view(request, pk):
     """Allow changing a user's password with permission logic."""
     target = get_object_or_404(User, pk=pk)
+    require_current = request.user.pk == target.pk
     if request.method == 'POST':
+        current = request.POST.get('current_password')
         p1 = request.POST.get('password1')
         p2 = request.POST.get('password2')
-        if p1 and p1 == p2:
+        if require_current and not target.check_password(current or ''):
+            error = 'Current password incorrect'
+        elif p1 and p1 == p2:
             target.set_password(p1)
             target.save()
+            log_action(request.user, 'password_change', target)
             return redirect('user_detail', pk=target.pk)
-        error = 'Passwords do not match'
+        else:
+            error = 'Passwords do not match'
     else:
         error = None
-    return render(request, 'change_password_form.html', {'target': target, 'error': error})
+    context = {'target': target, 'error': error, 'require_current': require_current}
+    return render(request, 'change_password_form.html', context)
 
 class WhoAmIView(LoginRequiredMixin, View):
     def get(self, request):

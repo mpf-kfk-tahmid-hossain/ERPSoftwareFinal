@@ -1,14 +1,21 @@
 {% extends 'base.html' %}
+{% load permissions_tags %}
 {% block title %}User Detail{% endblock %}
 {% block content %}
 <h2>{{ object.username }}</h2>
 <p>Email: {{ object.email }}</p>
 <p>Name: {{ object.first_name }} {{ object.last_name }}</p>
 <p>Status: {{ object.is_active|yesno:"Active,Inactive" }}</p>
+{% if user|has_permission:'change_user' %}
 <a href="{% url 'user_edit' object.id %}" class="btn btn-primary">Edit</a>
+{% endif %}
+{% if user|has_permission:'user_can_change_password' or user.id == object.id %}
 <a href="{% url 'user_change_password' object.id %}" class="btn btn-secondary">Change Password</a>
+{% endif %}
+{% if user|has_permission:'change_user' and user.id != object.id %}
 <form method="post" action="{% url 'user_toggle' object.id %}" class="d-inline">
   {% csrf_token %}
   <button type="submit" class="btn btn-warning">{% if object.is_active %}Deactivate{% else %}Reactivate{% endif %}</button>
 </form>
+{% endif %}
 {% endblock %}

@@ -42,6 +42,21 @@ class UserRole(models.Model):
         unique_together = ('user', 'role', 'company')
 
 
+class AuditLog(models.Model):
+    """Record significant user actions for auditing."""
+
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actor_logs')
+    target_user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='target_logs', null=True, blank=True
+    )
+    action = models.CharField(max_length=50)
+    details = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.actor} {self.action} {self.target_user or ''}" 
+
+
 class RolePermission(models.Model):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE)

@@ -128,3 +128,7 @@ Logout view updated to accept GET requests so the navbar logout button works.
 User creation now supports assigning or creating roles with permissions.
 Permission checks unified via `@require_permission` decorator.
 Added change password flow with self-service capability.
+Change password and profile edit now require the current password when performed by the user.
+Editing a user requires the `change_user` permission even for self edits.
+Password changes and user updates are logged via `AuditLog`.
+Buttons are hidden unless the user has the appropriate permission.

@@ -46,3 +46,22 @@ def require_permission(codename=None, allow_self=False):
         return _wrapped
 
     return decorator
+
+
+def user_has_permission(user, codename):
+    """Check if ``user`` has the custom permission ``codename``."""
+    if user.is_superuser:
+        return True
+    try:
+        perm = Permission.objects.get(codename=codename)
+    except Permission.DoesNotExist:
+        return False
+    return user.userrole_set.filter(role__permissions=perm, company=user.company).exists()
+
+
+def log_action(actor, action, target=None, details=""):
+    """Create an AuditLog entry."""
+    from .models import AuditLog
+
+    AuditLog.objects.create(actor=actor, action=action, target_user=target, details=details)
+
