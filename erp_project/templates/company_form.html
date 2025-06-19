@@ -2,9 +2,29 @@
 {% block title %}Add Company{% endblock %}
 {% block content %}
 <h2>Add Company</h2>
-<form method="post">
+<form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
+  <div class="mb-3">
+    <label for="id_name" class="form-label">Name</label>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ form.name.value|default:'' }}" required>
+    {% for error in form.name.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+  <div class="mb-3">
+    <label for="id_code" class="form-label">Code</label>
+    <input type="text" name="code" id="id_code" class="form-control" value="{{ form.code.value|default:'' }}" required>
+    {% for error in form.code.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+  <div class="mb-3">
+    <label for="id_address" class="form-label">Address</label>
+    <input type="text" name="address" id="id_address" class="form-control" value="{{ form.address.value|default:'' }}">
+    {% for error in form.address.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>
 {% endblock %}

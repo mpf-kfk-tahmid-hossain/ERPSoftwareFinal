@@ -4,7 +4,7 @@
 - **URL:** `/login/`
 - **Method:** `POST`
 - **Payload:** `username`, `password`
-- **Response:** Redirects to dashboard on success
+- **Response:** Redirects to `/` (dashboard) on success
 
 ## Add Company
 - **URL:** `/companies/add/`

@@ -38,6 +38,14 @@ class OnboardingTests(TestCase):
         user.refresh_from_db()
         self.assertFalse(user.is_active)
 
+    def test_login_redirects_to_dashboard(self):
+        response = self.client.post(
+            reverse('login'),
+            {'username': 'admin', 'password': 'pass'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
+
 class PermissionTests(TestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username='admin', password='pass')
