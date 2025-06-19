@@ -149,7 +149,7 @@ class CompanyUserLoginTests(TestCase):
         if resp.status_code != 302:
             self.fail(f"Form errors: {resp.context['form'].errors}")
         user = User.objects.get(username='coadmin')
-        self.assertTrue(user.password.startswith('pbkdf2_'))
+        self.assertTrue(user.password.startswith('argon2$'))
 
     def test_company_user_navbar_and_user_list_access(self):
         user = User.objects.create_user(username='emp', password='emp123', company=self.company)
