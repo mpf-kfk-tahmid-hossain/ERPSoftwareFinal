@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
+{% load permissions_tags %}
 {% block title %}Company Detail{% endblock %}
 {% block content %}
 <h2>{{ object.name }}</h2>
 <p>Code: {{ object.code }}</p>
 <p>Address: {{ object.address }}</p>
+{% if user.is_superuser %}
 <a href="{% url 'company_edit' object.pk %}" class="btn btn-primary">Edit</a>
+{% endif %}
 {% endblock %}
