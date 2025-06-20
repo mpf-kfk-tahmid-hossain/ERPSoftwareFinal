@@ -144,3 +144,117 @@ User detail view now shows role, permissions, recent audit logs and profile pict
 Fixed profile picture display by configuring MEDIA_URL and MEDIA_ROOT.
 List views now share filter and pagination components. All list tables allow sorting by any column via reusable headers.
 Filter forms now use HTMX for live updates with a 500ms delay and include labels for each field. Sorting arrows display only on the active column and the user profile view uses cards with a recent activity table.
+
+Absolutely, here’s the new workflow in the **same style and format** as your current `workflow.md`, tailored to fit into your documentation and implementation approach.
+
+---
+
+# Workflow
+
+## **Workflow Description: Product & Inventory Management (with Warehouse Stock Movement & Adjustment)**
+
+### **Purpose**
+
+This workflow enables each company to manage its entire product catalog, warehouse structure, and inventory levels—including all stock-in, stock-out, transfers, and adjustments—while enforcing company isolation, roles, and audit trails. This is foundational for procurement, sales, and production operations in the ERP.
+
+---
+
+### **Actors**
+
+* **Company Admin**: Manages products, categories, warehouses, and has full access to inventory operations for their company.
+* **Warehouse Manager**: (Optional) Handles day-to-day stock movements and adjustments within assigned warehouses.
+* **Auditor**: (Optional) Views inventory logs and stock adjustments for compliance.
+
+---
+
+### **Workflow Steps**
+
+1. **Product & Category Setup**
+
+   * Create product categories (with parent/child relationships for organization).
+   * Create product units (e.g., pcs, kg, box).
+   * Create products with SKU, barcode, type, unit, brand, category, and description.
+   * Assign each product to a company (data isolation).
+
+2. **Warehouse Setup**
+
+   * Create warehouses with name and location.
+   * Each warehouse is assigned to a company.
+
+3. **Stock Lot/Batch Creation**
+
+   * For products that require batch/lot tracking, create stock lots with batch number, expiry date, and initial quantity in a warehouse.
+
+4. **Inventory Movement (Stock In/Out/Transfer)**
+
+   * Record all inbound (purchase, production, adjustment) and outbound (sales, consumption) stock movements.
+   * Transfer stock between warehouses with clear “from” and “to” locations.
+   * Each movement records date, user, reference, warehouse(s), product, batch, and quantity.
+
+5. **Inventory Adjustment**
+
+   * Allow authorized users to adjust stock levels for a product/warehouse/lot with a required reason (e.g., damage, audit correction).
+   * All adjustments are logged for audit purposes.
+
+6. **Stock On Hand Calculation**
+
+   * System provides real-time inventory on hand per product, per warehouse, per lot.
+
+7. **Audit & Reporting**
+
+   * All inventory changes (movement, adjustment) are logged and reportable.
+   * List and filter inventory transactions by product, warehouse, date, type, or user.
+   * Full audit trail viewable by authorized roles.
+
+---
+
+### **Key Features**
+
+* **Multi-company isolation:** All inventory data is separated per company.
+* **RBAC:** Only authorized users can create/edit/delete products, manage warehouses, and perform inventory movements or adjustments.
+* **Comprehensive CRUD:** Products, categories, units, warehouses, stock lots.
+* **Inventory movement:** Every stock in, out, and transfer is tracked and reportable.
+* **Auditability:** All stock operations are audit logged.
+* **Search & filter:** Inventory lists, movement logs, and reports can be filtered and sorted.
+
+---
+
+### **Outcome**
+
+After this workflow:
+
+* Each company manages their own product catalog and warehouses.
+* All inventory movements and adjustments are tracked and auditable.
+* Users have real-time, accurate stock visibility across the organization.
+* System is ready for expansion to purchasing, sales, and production flows.
+
+---
+
+### 📋 **ERP Workflow Implementation Checklist: Product & Inventory Management**
+
+| #  | Task                                               | Status            |
+| -- | -------------------------------------------------- | ----------------- |
+| 1  | **Product Category CRUD (API + UI)**               | ⬜ Not Implemented |
+| 2  | **Product Unit CRUD (API + UI)**                   | ⬜ Not Implemented |
+| 3  | **Product CRUD (API + UI)**                        | ⬜ Not Implemented |
+| 4  | **Warehouse CRUD (API + UI)**                      | ⬜ Not Implemented |
+| 5  | **Stock Lot CRUD (API + UI)**                      | ⬜ Not Implemented |
+| 6  | **Inventory Movement: In/Out/Transfer (API + UI)** | ⬜ Not Implemented |
+| 7  | **Inventory Adjustment (API + UI, with reason)**   | ⬜ Not Implemented |
+| 8  | **Stock On Hand Listing/Report (API + UI)**        | ⬜ Not Implemented |
+| 9  | **Audit Logging for Inventory Actions**            | ⬜ Not Implemented |
+| 10 | **Permission/Role Enforcement for all actions**    | ⬜ Not Implemented |
+| 11 | **Stock Movement History/Log (API + UI)**          | ⬜ Not Implemented |
+| 12 | **API Documentation for all endpoints**            | ⬜ Not Implemented |
+| 13 | **Integration/UI Tests for full workflow**         | ⬜ Not Implemented |
+
+---
+
+### **How to Use**
+
+* **Check** each item (`✅ Implemented`) as you finish.
+* This covers all **CRUD**, inventory movement, stock tracking, adjustment, and reporting for the inventory workflow.
+
+---
+
+**Ready for implementation. Let me know if you want sample API endpoints, UI wireframes, or detailed field lists for any step.**
