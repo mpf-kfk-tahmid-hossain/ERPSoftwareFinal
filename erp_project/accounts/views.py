@@ -111,6 +111,7 @@ class UserListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
         context['filters'] = [
             {
                 'name': 'is_active',
+                'label': 'Status',
                 'current': self.request.GET.get('is_active', ''),
                 'options': [
                     {'val': '', 'label': 'All'},
@@ -207,7 +208,8 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             perms = Permission.objects.filter(role__userrole__user=target).distinct()
             context['permissions'] = perms.values_list('codename', flat=True)
         if user_has_permission(req_user, 'view_auditlog'):
-            context['logs'] = AuditLog.objects.filter(target_user=target).order_by('-timestamp')[:20]
+            context['logs'] = AuditLog.objects.filter(target_user=target).order_by('-timestamp')[:10]
+            context['all_logs_url'] = reverse_lazy('audit_log_list') + f'?target_user={target.id}'
         return context
 
 @method_decorator(require_permission('change_user'), name='dispatch')
@@ -381,7 +383,7 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'audit_log_list.html'
     model = AuditLog
     search_fields = ['actor__username', 'action', 'request_type', 'company__name']
-    filter_fields = ['request_type']
+    filter_fields = ['request_type', 'target_user']
     default_sort = '-timestamp'
 
     def base_queryset(self):
@@ -402,9 +404,17 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
             ('action', 'Action'),
             ('request_type', 'Type'),
         ]
+        users_qs = self.base_queryset().values_list('target_user', flat=True).distinct()
+        user_options = [{'val': '', 'label': 'All'}]
+        for uid in users_qs:
+            if uid:
+                u = User.objects.filter(pk=uid).first()
+                if u:
+                    user_options.append({'val': str(uid), 'label': u.username})
         context['filters'] = [
             {
                 'name': 'request_type',
+                'label': 'Type',
                 'current': self.request.GET.get('request_type', ''),
                 'options': [
                     {'val': '', 'label': 'All'},
@@ -413,7 +423,13 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
                     {'val': 'PUT', 'label': 'PUT'},
                     {'val': 'DELETE', 'label': 'DELETE'},
                 ],
-            }
+            },
+            {
+                'name': 'target_user',
+                'label': 'User',
+                'current': self.request.GET.get('target_user', ''),
+                'options': user_options,
+            },
         ]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()

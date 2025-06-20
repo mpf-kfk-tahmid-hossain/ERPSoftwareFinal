@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Companies</h2>
 {% include 'includes/filter_form.html' %}
+<div id="list-container">
 <table class="table">
   <thead>
     <tr>
@@ -18,4 +19,5 @@
   </tbody>
 </table>
 {% include 'includes/pagination.html' %}
+</div>
 {% endblock %}

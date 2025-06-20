@@ -7,6 +7,7 @@
 <a href="{% url 'user_add' company.id %}" class="btn btn-success mb-2">Add User</a>
 {% endif %}
 {% include 'includes/filter_form.html' %}
+<div id="list-container">
 <table class="table">
   <thead>
     <tr>
@@ -28,4 +29,5 @@
   </tbody>
 </table>
 {% include 'includes/pagination.html' %}
+</div>
 {% endblock %}

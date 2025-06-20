@@ -141,3 +141,4 @@ Implemented role management screens and ability to change a user's role during e
 Creating a new role from the user form now requires the `add_role` permission.
 User detail view now shows role, permissions, recent audit logs and profile pictures. User list supports search and pagination.
 List views now share filter and pagination components. All list tables allow sorting by any column via reusable headers.
+Filter forms now use HTMX for live updates with a 500ms delay and include labels for each field. Sorting arrows display only on the active column and the user profile view uses cards with a recent activity table.
