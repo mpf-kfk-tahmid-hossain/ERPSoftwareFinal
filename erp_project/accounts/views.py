@@ -189,25 +189,31 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     # Avoid clashing with the request "user" context variable
     context_object_name = 'target'
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if not self.request.user.is_superuser and obj.company != self.request.user.company:
+            raise PermissionDenied
+        return obj
+
     def get_context_data(self, **kwargs):
         """Inject permission flags for template button visibility."""
         context = super().get_context_data(**kwargs)
         target = context['target']
-        req_user = self.request.user
-        context['can_edit'] = user_has_permission(req_user, 'change_user')
+        viewer = self.request.user
+        context['can_edit'] = user_has_permission(viewer, 'change_user')
         context['can_change_password'] = (
-            user_has_permission(req_user, 'user_can_change_password')
-            or req_user.pk == target.pk
+            user_has_permission(viewer, 'user_can_change_password')
+            or viewer.pk == target.pk
         )
         context['can_toggle'] = (
-            user_has_permission(req_user, 'change_user') and req_user.pk != target.pk
+            user_has_permission(viewer, 'change_user') and viewer.pk != target.pk
         )
-        if user_has_permission(req_user, 'view_role'):
+        if user_has_permission(viewer, 'view_role'):
             context['roles'] = list(target.userrole_set.select_related('role').values_list('role__name', flat=True))
-        if user_has_permission(req_user, 'view_permission'):
+        if user_has_permission(viewer, 'view_permission'):
             perms = Permission.objects.filter(role__userrole__user=target).distinct()
             context['permissions'] = perms.values_list('codename', flat=True)
-        if user_has_permission(req_user, 'view_auditlog'):
+        if user_has_permission(viewer, 'view_auditlog'):
             context['logs'] = AuditLog.objects.filter(actor=target).order_by('-timestamp')[:10]
             context['all_logs_url'] = reverse_lazy('audit_log_list') + f'?actor={target.id}'
         return context
@@ -404,13 +410,14 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
             ('action', 'Action'),
             ('request_type', 'Type'),
         ]
-        users_qs = self.base_queryset().values_list('actor', flat=True).distinct()
+        # Show every user in the current company (or all users for superusers)
+        if self.request.user.is_superuser:
+            users_qs = User.objects.all()
+        else:
+            users_qs = User.objects.filter(company=self.request.user.company)
         user_options = [{'val': '', 'label': 'All'}]
-        for uid in users_qs:
-            if uid:
-                u = User.objects.filter(pk=uid).first()
-                if u:
-                    user_options.append({'val': str(uid), 'label': u.username})
+        for u in users_qs:
+            user_options.append({'val': str(u.pk), 'label': u.username})
         context['filters'] = [
             {
                 'name': 'request_type',

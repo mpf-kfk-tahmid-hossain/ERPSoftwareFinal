@@ -335,6 +335,17 @@ class ButtonVisibilityTests(TestCase):
         self.assertContains(resp, reverse('user_change_password', args=[self.user.id]))
         self.assertContains(resp, reverse('user_toggle', args=[self.user.id]))
 
+    def test_target_permissions_do_not_grant_buttons(self):
+        """Viewer permissions determine buttons, not the target user's roles."""
+        target = User.objects.create_user(username='targetp', password='pass', company=self.company)
+        role = Role.objects.create(name='Priv', company=self.company)
+        perm_edit = Permission.objects.get_or_create(codename='change_user')[0]
+        role.permissions.add(perm_edit)
+        UserRole.objects.create(user=target, role=role, company=self.company)
+        self.client.login(username='dave', password='pass')
+        resp = self.client.get(reverse('user_detail', args=[target.id]))
+        self.assertNotContains(resp, reverse('user_edit', args=[target.id]))
+
 
 class AuditMiddlewareTests(TestCase):
     def setUp(self):
@@ -459,6 +470,15 @@ class AuditLogListTests(TestCase):
         resp = self.client.get(reverse('audit_log_list'), {'actor': other.id})
         self.assertEqual(resp.context['page_obj'].paginator.count, 1)
         self.assertContains(resp, 'z')
+
+    def test_user_filter_shows_all_company_users(self):
+        """Users without logs should still appear in the actor filter."""
+        extra = User.objects.create_user(username='extra', password='pass', company=self.company1)
+        self.client.login(username='u1', password='pass')
+        resp = self.client.get(reverse('audit_log_list'))
+        actor_opts = resp.context['filters'][1]['options']
+        vals = [opt['val'] for opt in actor_opts]
+        self.assertIn(str(extra.id), vals)
 
 
 class AuditLogDetailTests(TestCase):

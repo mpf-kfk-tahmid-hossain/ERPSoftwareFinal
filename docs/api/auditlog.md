@@ -6,6 +6,7 @@
 - **Auth:** Logged in users with `view_auditlog` permission or superuser.
 - **Description:** Shows latest 100 audit log entries. Non-superusers only see logs from their company.
 - **Query Params:** `q` search string, `request_type` filter, `actor` filter, `sort` field (`-field` for descending), `page` for pagination
+- **User Filter:** When viewing the log list the actor filter includes all users in the current company (all users if superuser), even if they have no log entries yet.
 - **Response:** HTML table with timestamp, user, action, request type, target user, and company.
 
 ## Log Detail
