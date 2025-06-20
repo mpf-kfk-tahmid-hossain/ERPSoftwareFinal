@@ -1,10 +1,12 @@
 {% comment %}Reusable table header cell with sort links{% endcomment %}
 <th>
-  {{ label }}
-  {% if field %}
-  {% with asc=field desc='-'|add:field %}
-  <a href="?{{ sort_query_string }}{% if sort_query_string %}&{% endif %}sort={{ asc }}" class="ms-1{% if request.GET.sort == asc %} fw-bold{% endif %}">▲</a>
-  <a href="?{{ sort_query_string }}{% if sort_query_string %}&{% endif %}sort={{ desc }}" class="ms-1{% if request.GET.sort == desc %} fw-bold{% endif %}">▼</a>
+  {% with current=request.GET.sort %}
+    {% if current == field %}
+      <a href="?{{ sort_query_string }}{% if sort_query_string %}&{% endif %}sort=-{{ field }}">{{ label }}</a> ▲
+    {% elif current == '-'|add:field %}
+      <a href="?{{ sort_query_string }}{% if sort_query_string %}&{% endif %}sort={{ field }}">{{ label }}</a> ▼
+    {% else %}
+      <a href="?{{ sort_query_string }}{% if sort_query_string %}&{% endif %}sort={{ field }}">{{ label }}</a>
+    {% endif %}
   {% endwith %}
-  {% endif %}
 </th>

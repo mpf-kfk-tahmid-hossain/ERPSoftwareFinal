@@ -1,12 +1,16 @@
-<form method="get" class="row mb-3">
+<form method="get" class="row mb-3"
+      hx-get="." hx-target="#list-container" hx-push-url="true"
+      hx-trigger="keyup changed delay:500ms">
   {% if search %}
   <div class="col-auto">
-    <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search">
+    <label for="id_q" class="form-label visually-hidden">Search</label>
+    <input type="text" id="id_q" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search">
   </div>
   {% endif %}
   {% for f in filters %}
   <div class="col-auto">
-    <select name="{{ f.name }}" class="form-select">
+    <label for="id_{{ f.name }}" class="form-label">{{ f.label }}</label>
+    <select name="{{ f.name }}" id="id_{{ f.name }}" class="form-select">
       {% for opt in f.options %}
       <option value="{{ opt.val }}" {% if f.current|stringformat:'s' == opt.val|stringformat:'s' %}selected{% endif %}>{{ opt.label }}</option>
       {% endfor %}

@@ -1,39 +1,72 @@
 {% extends 'base.html' %}
 {% block title %}User Detail{% endblock %}
 {% block content %}
-<h2>{{ target.username }}</h2>
-{% if target.profile_picture %}
-<img src="{{ target.profile_picture.url }}" class="img-thumbnail mb-2" width="150">
-{% endif %}
-<p>Email: {{ target.email }}</p>
-<p>Name: {{ target.first_name }} {{ target.last_name }}</p>
-<p>Status: {{ target.is_active|yesno:"Active,Inactive" }}</p>
-{% if roles %}
-<h5>Roles</h5>
-<ul>
-  {% for r in roles %}<li>{{ r }}</li>{% endfor %}
-</ul>
-{% endif %}
+<h2 class="mb-4">{{ target.username }}</h2>
+<div class="row mb-4">
+  <div class="col-md-3 text-center">
+    {% if target.profile_picture %}
+    <img src="{{ target.profile_picture.url }}" class="img-thumbnail mb-2" width="150">
+    {% endif %}
+  </div>
+  <div class="col-md-9">
+    <div class="card mb-3">
+      <div class="card-body">
+        <p class="mb-1"><strong>Email:</strong> {{ target.email }}</p>
+        <p class="mb-1"><strong>Name:</strong> {{ target.first_name }} {{ target.last_name }}</p>
+        <p class="mb-1"><strong>Status:</strong> {{ target.is_active|yesno:"Active,Inactive" }}</p>
+        {% if roles %}
+        <p class="mb-0"><strong>Roles:</strong> {{ roles|join:', ' }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
 {% if permissions %}
-<h5>Permissions</h5>
-<ul>
-  {% for p in permissions %}<li>{{ p }}</li>{% endfor %}
-</ul>
+<div class="card mb-4">
+  <div class="card-header">Permissions</div>
+  <div class="card-body">
+    <ul class="mb-0">
+      {% for p in permissions %}<li>{{ p }}</li>{% endfor %}
+    </ul>
+  </div>
+</div>
 {% endif %}
+
 {% if logs %}
-<h5>Recent Activity</h5>
-<ul class="list-group mb-2">
-  {% for log in logs %}
-  <li class="list-group-item">{{ log.timestamp }} - {{ log.action }}</li>
-  {% endfor %}
-</ul>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Recent Activity</span>
+    <a href="{{ all_logs_url }}" class="btn btn-sm btn-outline-secondary">View all</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Action</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.timestamp }}</td>
+          <td>{{ log.action }}</td>
+          <td>{{ log.request_type }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
 {% if can_edit %}
 <a href="{% url 'user_edit' target.id %}" class="btn btn-primary">Edit</a>
 {% endif %}
-{% if can_change_password %}
-<a href="{% url 'user_change_password' target.id %}" class="btn btn-secondary">Change Password</a>
-{% endif %}
+  {% if can_change_password %}
+  <a href="{% url 'user_change_password' target.id %}" class="btn btn-secondary">Change Password</a>
+  {% endif %}
 {% if can_toggle %}
 <form method="post" action="{% url 'user_toggle' target.id %}" class="d-inline">
   {% csrf_token %}

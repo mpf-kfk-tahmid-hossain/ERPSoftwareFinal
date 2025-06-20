@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Audit Logs</h2>
 {% include 'includes/filter_form.html' %}
+<div id="list-container">
 <table class="table">
   <thead>
     <tr>
@@ -30,4 +31,5 @@
   </tbody>
 </table>
 {% include 'includes/pagination.html' %}
+</div>
 {% endblock %}
