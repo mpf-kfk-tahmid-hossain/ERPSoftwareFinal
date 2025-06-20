@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View, UpdateView
 from django.utils.decorators import method_decorator
 from django.db.models import Sum
+from accounts.utils import user_has_permission
 
 from accounts.utils import AdvancedListMixin, require_permission, log_action
 from .models import (
