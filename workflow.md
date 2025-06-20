@@ -149,8 +149,6 @@ Absolutely, here’s the new workflow in the **same style and format** as your c
 
 ---
 
-# Workflow
-
 ## **Workflow Description: Product & Inventory Management (with Warehouse Stock Movement & Adjustment)**
 
 ### **Purpose**
@@ -256,5 +254,3 @@ After this workflow:
 * This covers all **CRUD**, inventory movement, stock tracking, adjustment, and reporting for the inventory workflow.
 
 ---
-
-**Ready for implementation. Let me know if you want sample API endpoints, UI wireframes, or detailed field lists for any step.**
