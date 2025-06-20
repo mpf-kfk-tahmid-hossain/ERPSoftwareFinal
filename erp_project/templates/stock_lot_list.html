@@ -2,7 +2,7 @@
 {% block title %}Stock Lots{% endblock %}
 {% block content %}
 <h2>Stock Lots</h2>
-{% if user|has_permission:'add_stocklot' %}
+{% if can_add_stocklot %}
 <a href="{% url 'stock_lot_add' %}" class="btn btn-success mb-2">Add Lot</a>
 {% endif %}
 {% include 'includes/filter_form.html' %}

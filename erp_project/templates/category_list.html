@@ -2,7 +2,7 @@
 {% block title %}Categories{% endblock %}
 {% block content %}
 <h2>Product Categories</h2>
-{% if user|has_permission:'add_productcategory' %}
+{% if can_add_category %}
 <a href="{% url 'category_add' %}" class="btn btn-success mb-2">Add Category</a>
 {% endif %}
 {% include 'includes/filter_form.html' %}

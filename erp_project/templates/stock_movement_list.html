@@ -2,7 +2,7 @@
 {% block title %}Stock Movements{% endblock %}
 {% block content %}
 <h2>Stock Movements</h2>
-{% if user|has_permission:'add_stockmovement' %}
+{% if can_add_stockmovement %}
 <a href="{% url 'stock_movement_add' %}" class="btn btn-success mb-2">Add Movement</a>
 {% endif %}
 {% include 'includes/filter_form.html' %}
