@@ -208,7 +208,7 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             perms = Permission.objects.filter(role__userrole__user=target).distinct()
             context['permissions'] = perms.values_list('codename', flat=True)
         if user_has_permission(req_user, 'view_auditlog'):
-            context['logs'] = AuditLog.objects.filter(target_user=target).order_by('-timestamp')[:10]
+            context['logs'] = AuditLog.objects.filter(actor=target).order_by('-timestamp')[:10]
             context['all_logs_url'] = reverse_lazy('audit_log_list') + f'?target_user={target.id}'
         return context
 
