@@ -11,6 +11,7 @@
       <th>Type</th>
       <th>Target</th>
       <th>Company</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -22,6 +23,7 @@
       <td>{{ log.request_type }}</td>
       <td>{{ log.target_user }}</td>
       <td>{{ log.company }}</td>
+      <td><a href="{% url 'audit_log_detail' log.id %}">View</a></td>
     </tr>
     {% endfor %}
   </tbody>

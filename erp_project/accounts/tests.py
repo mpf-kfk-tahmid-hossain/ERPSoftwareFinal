@@ -1,7 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from .models import Company, Role, UserRole, Permission
+from .models import Company, Role, UserRole, Permission, AuditLog
 from .utils import log_action
 
 User = get_user_model()
@@ -451,5 +451,30 @@ class AuditLogListTests(TestCase):
         resp = self.client.get(reverse('audit_log_list'))
         self.assertEqual(len(resp.context['logs']), 1)
         self.assertContains(resp, 'x')
+
+
+class AuditLogDetailTests(TestCase):
+    def setUp(self):
+        self.company1 = Company.objects.create(name='D1', code='D1', address='')
+        self.company2 = Company.objects.create(name='D2', code='D2', address='')
+        role = Role.objects.create(name='Auditor', company=self.company1)
+        perm = Permission.objects.get_or_create(codename='view_auditlog')[0]
+        role.permissions.add(perm)
+        self.user1 = User.objects.create_user(username='d1', password='pass', company=self.company1)
+        self.user2 = User.objects.create_user(username='d2', password='pass', company=self.company2)
+        UserRole.objects.create(user=self.user1, role=role, company=self.company1)
+        self.log1 = AuditLog.objects.create(actor=self.user1, action='a', company=self.company1)
+        self.log2 = AuditLog.objects.create(actor=self.user2, action='b', company=self.company2)
+
+    def test_detail_allowed_same_company(self):
+        self.client.login(username='d1', password='pass')
+        resp = self.client.get(reverse('audit_log_detail', args=[self.log1.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'a')
+
+    def test_detail_forbidden_other_company(self):
+        self.client.login(username='d1', password='pass')
+        resp = self.client.get(reverse('audit_log_detail', args=[self.log2.id]))
+        self.assertEqual(resp.status_code, 403)
 
 
