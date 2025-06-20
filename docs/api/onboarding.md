@@ -48,7 +48,7 @@
 - **URL:** `/audit-logs/`
 - **Method:** `GET`
 - **Auth:** Auditor or Superuser
-- **Query Params:** `q` search string, `request_type` filter, `sort` field (`-field` for descending), `page` for pagination
+- **Query Params:** `q` search string, `request_type` filter, `actor` filter, `sort` field (`-field` for descending), `page` for pagination
 
 ## Create Company User
 - **URL:** `/companies/<id>/users/add/`
