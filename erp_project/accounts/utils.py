@@ -3,6 +3,8 @@ import json
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Permission
+from django.db.models import Q
+from django.core.paginator import Paginator
 
 
 def require_permission(codename=None, allow_self=False):
@@ -76,4 +78,48 @@ def log_action(actor, action, target=None, details="", request_type=None, compan
         request_type=request_type,
         company=company or getattr(actor, "company", None),
     )
+
+
+class AdvancedListMixin:
+    """Mixin providing search, sort and pagination helpers."""
+
+    model = None
+    search_fields = []
+    filter_fields = []
+    default_sort = "id"
+    paginate_by = 10
+
+    def base_queryset(self):
+        return self.model.objects.all()
+
+    def get_queryset(self):
+        qs = self.base_queryset()
+        q = self.request.GET.get("q", "").strip()
+        if q and self.search_fields:
+            cond = Q()
+            for field in self.search_fields:
+                cond |= Q(**{f"{field}__icontains": q})
+            qs = qs.filter(cond)
+        for f in self.filter_fields:
+            val = self.request.GET.get(f)
+            if val not in (None, ""):
+                qs = qs.filter(**{f: val})
+        sort = self.request.GET.get("sort", self.default_sort)
+        qs = qs.order_by(sort)
+        paginator = Paginator(qs, self.paginate_by)
+        page = self.request.GET.get("page")
+        return paginator.get_page(page)
+
+    def query_string(self):
+        """Return current query string without the page parameter."""
+        qd = self.request.GET.copy()
+        qd.pop("page", None)
+        return qd.urlencode()
+
+    def sort_query_string(self):
+        """Return query string without pagination or sorting params."""
+        qd = self.request.GET.copy()
+        qd.pop("page", None)
+        qd.pop("sort", None)
+        return qd.urlencode()
 

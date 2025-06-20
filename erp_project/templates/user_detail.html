@@ -2,9 +2,32 @@
 {% block title %}User Detail{% endblock %}
 {% block content %}
 <h2>{{ target.username }}</h2>
+{% if target.profile_picture %}
+<img src="{{ target.profile_picture.url }}" class="img-thumbnail mb-2" width="150">
+{% endif %}
 <p>Email: {{ target.email }}</p>
 <p>Name: {{ target.first_name }} {{ target.last_name }}</p>
 <p>Status: {{ target.is_active|yesno:"Active,Inactive" }}</p>
+{% if roles %}
+<h5>Roles</h5>
+<ul>
+  {% for r in roles %}<li>{{ r }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% if permissions %}
+<h5>Permissions</h5>
+<ul>
+  {% for p in permissions %}<li>{{ p }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% if logs %}
+<h5>Recent Activity</h5>
+<ul class="list-group mb-2">
+  {% for log in logs %}
+  <li class="list-group-item">{{ log.timestamp }} - {{ log.action }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
 {% if can_edit %}
 <a href="{% url 'user_edit' target.id %}" class="btn btn-primary">Edit</a>
 {% endif %}

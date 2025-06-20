@@ -14,13 +14,8 @@
     <input type="text" name="description" id="id_description" class="form-control" value="{{ role.description|default:'' }}">
   </div>
   <div class="mb-3">
-    <label class="form-label">Permissions</label>
-    {% for perm in permissions %}
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="permissions" value="{{ perm.id }}" id="perm{{ perm.id }}" {% if assigned_ids and perm.id in assigned_ids %}checked{% endif %}>
-      <label class="form-check-label" for="perm{{ perm.id }}">{{ perm.codename }}</label>
-    </div>
-    {% endfor %}
+    <label class="form-label">Permissions</label><br>
+    {% include 'includes/permissions_grid.html' with permissions=permissions assigned_ids=assigned_ids %}
   </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>

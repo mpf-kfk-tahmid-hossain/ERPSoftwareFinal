@@ -6,7 +6,12 @@ from .models import Company
 import json
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
-from .utils import require_permission, log_action, user_has_permission
+from .utils import (
+    require_permission,
+    log_action,
+    user_has_permission,
+    AdvancedListMixin,
+)
 
 class SuperuserRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -20,12 +25,25 @@ class CompanyCreateView(LoginRequiredMixin, SuperuserRequiredMixin, CreateView):
     success_url = reverse_lazy('company_list')
 
 @method_decorator(require_permission('view_company'), name='dispatch')
-class CompanyListView(LoginRequiredMixin, SuperuserRequiredMixin, TemplateView):
+class CompanyListView(LoginRequiredMixin, SuperuserRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'company_list.html'
+    model = Company
+    search_fields = ['name', 'code', 'address']
+    default_sort = 'name'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['companies'] = Company.objects.all()
+        page = self.get_queryset()
+        context['page_obj'] = page
+        context['search'] = True
+        context['filters'] = []
+        context['sort_options'] = [
+            ('name', 'Name'),
+            ('code', 'Code'),
+            ('address', 'Address'),
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
         return context
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -66,13 +84,43 @@ class CompanyUpdateView(LoginRequiredMixin, SuperuserRequiredMixin, UpdateView):
     success_url = reverse_lazy('company_list')
 
 @method_decorator(require_permission('view_user'), name='dispatch')
-class UserListView(LoginRequiredMixin, TemplateView):
+class UserListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'user_list.html'
+    model = User
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    filter_fields = ['is_active']
+    default_sort = 'username'
+    paginate_by = 10
+
+    def base_queryset(self):
+        company = get_object_or_404(Company, pk=self.kwargs['company_id'])
+        self.company = company
+        return User.objects.filter(company=company)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        company = get_object_or_404(Company, pk=self.kwargs['company_id'])
-        context['company'] = company
-        context['users'] = User.objects.filter(company=company)
+        page = self.get_queryset()
+        context['company'] = self.company
+        context['page_obj'] = page
+        context['search'] = True
+        context['sort_options'] = [
+            ('username', 'Username'),
+            ('email', 'Email'),
+            ('is_active', 'Active'),
+        ]
+        context['filters'] = [
+            {
+                'name': 'is_active',
+                'current': self.request.GET.get('is_active', ''),
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': 'True', 'label': 'Active'},
+                    {'val': 'False', 'label': 'Inactive'},
+                ],
+            }
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
         return context
 
 @method_decorator(require_permission("add_user"), name="dispatch")
@@ -98,7 +146,7 @@ class CompanyUserCreateView(View):
 
     def post(self, request, company_id):
         company = get_object_or_404(Company, pk=company_id)
-        form = CompanyUserCreationForm(request.POST)
+        form = CompanyUserCreationForm(request.POST, request.FILES)
         roles = Role.objects.filter(company=company)
         can_add_role = user_has_permission(request.user, 'add_role')
         permissions = Permission.objects.all() if can_add_role else Permission.objects.none()
@@ -153,12 +201,19 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context['can_toggle'] = (
             user_has_permission(req_user, 'change_user') and req_user.pk != target.pk
         )
+        if user_has_permission(req_user, 'view_role'):
+            context['roles'] = list(target.userrole_set.select_related('role').values_list('role__name', flat=True))
+        if user_has_permission(req_user, 'view_permission'):
+            perms = Permission.objects.filter(role__userrole__user=target).distinct()
+            context['permissions'] = perms.values_list('codename', flat=True)
+        if user_has_permission(req_user, 'view_auditlog'):
+            context['logs'] = AuditLog.objects.filter(target_user=target).order_by('-timestamp')[:20]
         return context
 
 @method_decorator(require_permission('change_user'), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
-    fields = ['username', 'email', 'first_name', 'last_name']
+    fields = ['username', 'email', 'first_name', 'last_name', 'profile_picture']
     template_name = 'user_form.html'
 
     def get_success_url(self):
@@ -257,12 +312,27 @@ class DashboardAPI(LoginRequiredMixin, View):
         return JsonResponse({'username': request.user.username, 'company': company})
 
 @method_decorator(require_permission('view_role'), name='dispatch')
-class RoleListView(LoginRequiredMixin, TemplateView):
+class RoleListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'role_list.html'
+    model = Role
+    search_fields = ['name', 'description']
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return Role.objects.filter(company=self.request.user.company)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['roles'] = Role.objects.filter(company=self.request.user.company)
+        page = self.get_queryset()
+        context['page_obj'] = page
+        context['search'] = True
+        context['filters'] = []
+        context['sort_options'] = [
+            ('name', 'Name'),
+            ('description', 'Description'),
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
         return context
 
 
@@ -307,15 +377,46 @@ class RoleUpdateView(LoginRequiredMixin, View):
 
 
 @method_decorator(require_permission('view_auditlog'), name='dispatch')
-class AuditLogListView(LoginRequiredMixin, TemplateView):
+class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'audit_log_list.html'
+    model = AuditLog
+    search_fields = ['actor__username', 'action', 'request_type', 'company__name']
+    filter_fields = ['request_type']
+    default_sort = '-timestamp'
+
+    def base_queryset(self):
+        qs = AuditLog.objects.select_related('actor', 'target_user', 'company')
+        if not self.request.user.is_superuser:
+            qs = qs.filter(company=self.request.user.company)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        logs = AuditLog.objects.select_related('actor', 'target_user', 'company')
-        if not self.request.user.is_superuser:
-            logs = logs.filter(company=self.request.user.company)
-        context['logs'] = logs.order_by('-timestamp')[:100]
+        page = self.get_queryset()
+        context['page_obj'] = page
+        context['search'] = True
+        context['sort_options'] = [
+            ('-timestamp', 'Newest'),
+            ('timestamp', 'Oldest'),
+            ('actor__username', 'User'),
+            ('action', 'Action'),
+            ('request_type', 'Type'),
+        ]
+        context['filters'] = [
+            {
+                'name': 'request_type',
+                'current': self.request.GET.get('request_type', ''),
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': 'GET', 'label': 'GET'},
+                    {'val': 'POST', 'label': 'POST'},
+                    {'val': 'PUT', 'label': 'PUT'},
+                    {'val': 'DELETE', 'label': 'DELETE'},
+                ],
+            }
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
         return context
 
 
