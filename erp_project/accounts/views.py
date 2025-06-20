@@ -3,6 +3,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 from .models import Company
+import json
+from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from .utils import require_permission, log_action, user_has_permission
 
@@ -314,6 +316,34 @@ class AuditLogListView(LoginRequiredMixin, TemplateView):
         if not self.request.user.is_superuser:
             logs = logs.filter(company=self.request.user.company)
         context['logs'] = logs.order_by('-timestamp')[:100]
+        return context
+
+
+@method_decorator(require_permission('view_auditlog'), name='dispatch')
+class AuditLogDetailView(LoginRequiredMixin, TemplateView):
+    """Display a single audit log entry with parsed JSON details."""
+
+    template_name = 'audit_log_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        log = get_object_or_404(AuditLog, pk=self.kwargs['pk'])
+        if not self.request.user.is_superuser and log.company != self.request.user.company:
+            raise PermissionDenied
+        context['log'] = log
+        try:
+            details_dict = json.loads(log.details) if log.details else None
+        except json.JSONDecodeError:
+            details_dict = None
+        if details_dict is not None:
+            detail_rows = []
+            for key, value in details_dict.items():
+                if isinstance(value, (dict, list)):
+                    pretty = json.dumps(value, indent=2)
+                else:
+                    pretty = value
+                detail_rows.append((key, pretty))
+            context['detail_rows'] = detail_rows
         return context
 
 # Custom permission denied handler

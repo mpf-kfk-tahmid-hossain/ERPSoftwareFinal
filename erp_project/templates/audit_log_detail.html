@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log Detail{% endblock %}
+{% block content %}
+<h2>Audit Log Entry</h2>
+<table class="table table-bordered">
+  <tbody>
+    <tr><th>Timestamp</th><td>{{ log.timestamp }}</td></tr>
+    <tr><th>User</th><td>{{ log.actor.username }}</td></tr>
+    <tr><th>Action</th><td>{{ log.action }}</td></tr>
+    <tr><th>Type</th><td>{{ log.request_type }}</td></tr>
+    <tr><th>Target</th><td>{{ log.target_user }}</td></tr>
+    <tr><th>Company</th><td>{{ log.company }}</td></tr>
+  </tbody>
+</table>
+{% if detail_rows %}
+<h4>Details</h4>
+<table class="table table-sm table-striped">
+  <tbody>
+  {% for key, value in detail_rows %}
+    <tr>
+      <th>{{ key }}</th>
+      <td><pre>{{ value }}</pre></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% elif log.details %}
+<h4>Details</h4>
+<pre>{{ log.details }}</pre>
+{% endif %}
+<a href="{% url 'audit_log_list' %}" class="btn btn-secondary">Back</a>
+{% endblock %}
