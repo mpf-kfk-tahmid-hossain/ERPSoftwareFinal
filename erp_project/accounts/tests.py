@@ -452,6 +452,14 @@ class AuditLogListTests(TestCase):
         self.assertEqual(resp.context['page_obj'].paginator.count, 1)
         self.assertContains(resp, 'x')
 
+    def test_actor_filter(self):
+        other = User.objects.create_user(username='o1', password='pass', company=self.company1)
+        log_action(other, 'z', request_type='GET', company=self.company1)
+        self.client.login(username='u1', password='pass')
+        resp = self.client.get(reverse('audit_log_list'), {'actor': other.id})
+        self.assertEqual(resp.context['page_obj'].paginator.count, 1)
+        self.assertContains(resp, 'z')
+
 
 class AuditLogDetailTests(TestCase):
     def setUp(self):

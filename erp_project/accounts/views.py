@@ -209,7 +209,7 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             context['permissions'] = perms.values_list('codename', flat=True)
         if user_has_permission(req_user, 'view_auditlog'):
             context['logs'] = AuditLog.objects.filter(actor=target).order_by('-timestamp')[:10]
-            context['all_logs_url'] = reverse_lazy('audit_log_list') + f'?target_user={target.id}'
+            context['all_logs_url'] = reverse_lazy('audit_log_list') + f'?actor={target.id}'
         return context
 
 @method_decorator(require_permission('change_user'), name='dispatch')
@@ -383,7 +383,7 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'audit_log_list.html'
     model = AuditLog
     search_fields = ['actor__username', 'action', 'request_type', 'company__name']
-    filter_fields = ['request_type', 'target_user']
+    filter_fields = ['request_type', 'actor']
     default_sort = '-timestamp'
 
     def base_queryset(self):
@@ -404,7 +404,7 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
             ('action', 'Action'),
             ('request_type', 'Type'),
         ]
-        users_qs = self.base_queryset().values_list('target_user', flat=True).distinct()
+        users_qs = self.base_queryset().values_list('actor', flat=True).distinct()
         user_options = [{'val': '', 'label': 'All'}]
         for uid in users_qs:
             if uid:
@@ -425,9 +425,9 @@ class AuditLogListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
                 ],
             },
             {
-                'name': 'target_user',
+                'name': 'actor',
                 'label': 'User',
-                'current': self.request.GET.get('target_user', ''),
+                'current': self.request.GET.get('actor', ''),
                 'options': user_options,
             },
         ]
