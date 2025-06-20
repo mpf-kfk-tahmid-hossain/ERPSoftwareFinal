@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Unit{% endblock %}
+{% block content %}
+<h2>Add Unit</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_code" class="form-label">Code</label>
+    <input type="text" name="code" id="id_code" class="form-control" value="{{ code|default:'' }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="id_name" class="form-label">Name</label>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ name|default:'' }}" required>
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

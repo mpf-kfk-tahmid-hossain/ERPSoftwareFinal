@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Adjustments{% endblock %}
+{% block content %}
+<h2>Inventory Adjustments</h2>
+{% if user|has_permission:'add_inventoryadjustment' %}
+<a href="{% url 'inventory_adjustment_add' %}" class="btn btn-success mb-2">Add Adjustment</a>
+{% endif %}
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Date' field='date' %}
+      <th>Product</th><th>Warehouse</th><th>Qty</th><th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for adj in page_obj %}
+    <tr>
+      <td>{{ adj.date|date:'Y-m-d H:i' }}</td>
+      <td>{{ adj.product.name }}</td>
+      <td>{{ adj.warehouse.name }}</td>
+      <td>{{ adj.qty }}</td>
+      <td>{{ adj.get_reason_display }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+{% endblock %}

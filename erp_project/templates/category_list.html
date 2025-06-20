@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<h2>Product Categories</h2>
+{% if user|has_permission:'add_productcategory' %}
+<a href="{% url 'category_add' %}" class="btn btn-success mb-2">Add Category</a>
+{% endif %}
+{% include 'includes/filter_form.html' %}
+<div id="list-container">
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      <th>Parent</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for cat in page_obj %}
+    <tr>
+      <td><a href="{% url 'category_edit' cat.id %}">{{ cat.name }}</a></td>
+      <td>{{ cat.parent }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+</div>
+{% endblock %}
