@@ -44,6 +44,7 @@ class CompanyListView(LoginRequiredMixin, SuperuserRequiredMixin, AdvancedListMi
         ]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_user'] = user_has_permission(self.request.user, 'add_user')
         return context
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -341,6 +342,8 @@ class RoleListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
         ]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_role'] = user_has_permission(self.request.user, 'add_role')
+        context['can_change_role'] = user_has_permission(self.request.user, 'change_role')
         return context
 
 

@@ -589,3 +589,16 @@ class ProfilePictureDisplayTests(TestCase):
         self.assertContains(detail_resp, user.profile_picture.url)
 
 
+class TemplatePermissionFilterTests(TestCase):
+    def test_templates_do_not_use_has_permission_filter(self):
+        from pathlib import Path
+        from django.conf import settings
+
+        template_root = settings.BASE_DIR / 'templates'
+        for tpl in template_root.rglob('*.html'):
+            with self.subTest(template=tpl.name):
+                content = tpl.read_text()
+                self.assertNotIn('|has_permission', content)
+
+
+

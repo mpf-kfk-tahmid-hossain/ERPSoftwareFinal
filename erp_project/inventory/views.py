@@ -40,6 +40,7 @@ class WarehouseListView(AdvancedListMixin, TemplateView):
         ]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_warehouse'] = user_has_permission(self.request.user, 'add_warehouse')
         return context
 
 
@@ -89,6 +90,7 @@ class ProductCategoryListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('name', 'Name')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_category'] = user_has_permission(self.request.user, 'add_productcategory')
         return context
 
 
@@ -148,6 +150,7 @@ class ProductUnitListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('code', 'Code'), ('name', 'Name')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_unit'] = user_has_permission(self.request.user, 'add_productunit')
         return context
 
 
@@ -185,6 +188,7 @@ class ProductListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('name', 'Name'), ('sku', 'SKU')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_product'] = user_has_permission(self.request.user, 'add_product')
         return context
 
 
@@ -242,6 +246,7 @@ class StockLotListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('batch_number', 'Batch')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_stocklot'] = user_has_permission(self.request.user, 'add_stocklot')
         return context
 
 
@@ -291,6 +296,7 @@ class StockMovementListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('date', 'Date')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_stockmovement'] = user_has_permission(self.request.user, 'add_stockmovement')
         return context
 
 
@@ -348,6 +354,7 @@ class InventoryAdjustmentListView(AdvancedListMixin, TemplateView):
         context['sort_options'] = [('date', 'Date')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
+        context['can_add_inventoryadjustment'] = user_has_permission(self.request.user, 'add_inventoryadjustment')
         return context
 
 

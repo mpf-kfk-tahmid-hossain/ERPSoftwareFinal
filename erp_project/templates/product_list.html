@@ -2,7 +2,7 @@
 {% block title %}Products{% endblock %}
 {% block content %}
 <h2>Products</h2>
-{% if user|has_permission:'add_product' %}
+{% if can_add_product %}
 <a href="{% url 'product_add' %}" class="btn btn-success mb-2">Add Product</a>
 {% endif %}
 {% include 'includes/filter_form.html' %}
