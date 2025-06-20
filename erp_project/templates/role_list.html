@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load permissions_tags %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<h2>Roles for {{ request.user.company.name }}</h2>
+{% if user|has_permission:'add_role' %}
+<a href="{% url 'role_add' %}" class="btn btn-success mb-2">Add Role</a>
+{% endif %}
+<table class="table">
+  <thead><tr><th>Name</th><th>Description</th><th></th></tr></thead>
+  <tbody>
+  {% for r in roles %}
+  <tr>
+    <td>{{ r.name }}</td>
+    <td>{{ r.description }}</td>
+    <td>
+      {% if user|has_permission:'change_role' %}
+      <a href="{% url 'role_edit' r.id %}" class="btn btn-sm btn-primary">Edit</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

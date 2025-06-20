@@ -1,4 +1,5 @@
 from functools import wraps
+import json
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Permission
@@ -60,8 +61,12 @@ def user_has_permission(user, codename):
 
 
 def log_action(actor, action, target=None, details=""):
-    """Create an AuditLog entry."""
-    from .models import AuditLog
+    """Create an AuditLog entry.
 
+    ``details`` can be a dictionary which will be stored as JSON.
+    """
+    from .models import AuditLog
+    if isinstance(details, dict):
+        details = json.dumps(details)
     AuditLog.objects.create(actor=actor, action=action, target_user=target, details=details)
 

@@ -61,9 +61,10 @@
       {% for r in roles %}
       <option value="{{ r.id }}">{{ r.name }}</option>
       {% endfor %}
-      <option value="new">Create new role...</option>
+      {% if can_add_role %}<option value="new">Create new role...</option>{% endif %}
     </select>
   </div>
+  {% if can_add_role %}
   <div id="new-role-fields" style="display:none;" class="mb-3">
     <label for="id_new_role_name" class="form-label">New Role Name</label>
     <input type="text" name="new_role_name" id="id_new_role_name" class="form-control">
@@ -85,6 +86,7 @@
       });
     }
   </script>
+  {% endif %}
   {% endif %}
   <button type="submit" class="btn btn-success">Save</button>
 </form>

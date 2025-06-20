@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Role Form{% endblock %}
+{% block content %}
+<h2>{% if role %}Edit{% else %}Add{% endif %} Role</h2>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_name" class="form-label">Name</label>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ role.name|default:'' }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="id_description" class="form-label">Description</label>
+    <input type="text" name="description" id="id_description" class="form-control" value="{{ role.description|default:'' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Permissions</label>
+    {% for perm in permissions %}
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="permissions" value="{{ perm.id }}" id="perm{{ perm.id }}" {% if assigned_ids and perm.id in assigned_ids %}checked{% endif %}>
+      <label class="form-check-label" for="perm{{ perm.id }}">{{ perm.codename }}</label>
+    </div>
+    {% endfor %}
+  </div>
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}
