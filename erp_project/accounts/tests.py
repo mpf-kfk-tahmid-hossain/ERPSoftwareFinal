@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from .models import Company, Role, UserRole, Permission, AuditLog
 from .utils import log_action
 
@@ -550,5 +551,41 @@ class CompanyListFeatureTests(TestCase):
         companies = list(resp.context['page_obj'])
         codes = [c.code for c in companies]
         self.assertEqual(codes, sorted(codes))
+
+
+class ProfilePictureDisplayTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='PicCo', code='PIC', address='')
+        role = Role.objects.get(name='Admin')
+        perm_add = Permission.objects.get_or_create(codename='add_user')[0]
+        perm_view = Permission.objects.get_or_create(codename='view_user')[0]
+        role.permissions.add(perm_add, perm_view)
+        self.admin = User.objects.create_user(username='padmin', password='pass', company=self.company)
+        UserRole.objects.create(user=self.admin, role=role, company=self.company)
+        self.client.login(username='padmin', password='pass')
+
+    def test_profile_picture_display(self):
+        from io import BytesIO
+        from PIL import Image
+        img_io = BytesIO()
+        Image.new('RGB', (1, 1)).save(img_io, format='JPEG')
+        img = SimpleUploadedFile('pic.jpg', img_io.getvalue(), content_type='image/jpeg')
+        resp = self.client.post(
+            reverse('user_add', args=[self.company.id]),
+            {
+                'username': 'imguser',
+                'password1': 'pass12345',
+                'password2': 'pass12345',
+                'profile_picture': img,
+            }
+        )
+        if resp.status_code != 302:
+            print('form errors', resp.context['form'].errors)
+        self.assertEqual(resp.status_code, 302)
+        user = User.objects.get(username='imguser')
+        list_resp = self.client.get(reverse('user_list', args=[self.company.id]))
+        self.assertContains(list_resp, user.profile_picture.url)
+        detail_resp = self.client.get(reverse('user_detail', args=[user.id]))
+        self.assertContains(detail_resp, user.profile_picture.url)
 
 

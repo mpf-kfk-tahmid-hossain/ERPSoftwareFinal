@@ -55,6 +55,7 @@
 - **Method:** `POST`
 - **Auth:** Company Admin or Superuser
 - **Payload:** `username`, `password1`, `password2`
+- **Files:** `profile_picture` optional image file.
 - **Notes:** if the acting user has `add_role` permission they may create a new role during user creation; otherwise only existing roles can be chosen.
 
 ## User Detail
@@ -69,6 +70,7 @@
   - `change_user` permission required for all edits.
   - Current password must be supplied when editing your own profile.
 - **Payload:** standard user fields (`username`, `email`, etc.) plus `current_password` when self-editing.
+- **Files:** `profile_picture` optional image file.
 - **Audit:** all user edits are recorded in `AuditLog` entries.
 - **Notes:** new roles can be created during editing only when the user has `add_role` permission.
 
