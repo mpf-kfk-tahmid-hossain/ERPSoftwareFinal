@@ -18,6 +18,9 @@
         {% if user.is_authenticated and user.company and user|has_permission:'view_user' %}
         <li class="nav-item"><a class="nav-link" href="{% url 'user_list' user.company.id %}">Users</a></li>
         {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_role' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'role_list' %}">Roles</a></li>
+        {% endif %}
       </ul>
       <ul class="navbar-nav ms-auto">
         {% if user.is_authenticated %}

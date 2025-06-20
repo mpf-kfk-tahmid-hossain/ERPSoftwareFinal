@@ -335,3 +335,97 @@ class ButtonVisibilityTests(TestCase):
         self.assertContains(resp, reverse('user_toggle', args=[self.user.id]))
 
 
+class AuditMiddlewareTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='auditor', password='pass')
+
+    def test_login_and_logout_logged(self):
+        self.client.post(reverse('login'), {'username': 'auditor', 'password': 'pass'})
+        from accounts.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(actor=self.user, action='login').exists())
+        self.client.get(reverse('logout'))
+        self.assertTrue(AuditLog.objects.filter(actor=self.user, action='logout').exists())
+
+
+class RoleChangeTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='RoleCo', code='RC', address='')
+        self.user = User.objects.create_user(username='target', password='pass', company=self.company)
+        self.admin = User.objects.create_user(username='roleadmin', password='pass', company=self.company)
+        self.admin_role = Role.objects.get(name='Admin')
+        perm = Permission.objects.get_or_create(codename='change_user')[0]
+        self.admin_role.permissions.add(perm)
+        UserRole.objects.create(user=self.admin, role=self.admin_role, company=self.company)
+
+    def test_change_user_role(self):
+        new_role = Role.objects.create(name='Staff', company=self.company)
+        self.client.login(username='roleadmin', password='pass')
+        resp = self.client.post(
+            reverse('user_edit', args=[self.user.id]),
+            {
+                'username': 'target',
+                'email': '',
+                'first_name': '',
+                'last_name': '',
+                'role': new_role.id,
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(UserRole.objects.filter(user=self.user, role=new_role).exists())
+
+
+class AddRolePermissionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='Perm2Co', code='P2', address='')
+        self.role = Role.objects.create(name='Staff', company=self.company)
+        add_user_perm = Permission.objects.get_or_create(codename='add_user')[0]
+        self.role.permissions.add(add_user_perm)
+        self.user = User.objects.create_user(username='creator', password='pass', company=self.company)
+        UserRole.objects.create(user=self.user, role=self.role, company=self.company)
+
+    def test_form_hides_add_role_without_permission(self):
+        self.client.login(username='creator', password='pass')
+        resp = self.client.get(reverse('user_add', args=[self.company.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'Create new role')
+
+    def test_form_shows_add_role_with_permission(self):
+        add_role_perm = Permission.objects.get_or_create(codename='add_role')[0]
+        self.role.permissions.add(add_role_perm)
+        self.client.login(username='creator', password='pass')
+        resp = self.client.get(reverse('user_add', args=[self.company.id]))
+        self.assertContains(resp, 'Create new role')
+
+    def test_post_new_role_without_permission_forbidden(self):
+        self.client.login(username='creator', password='pass')
+        resp = self.client.post(
+            reverse('user_add', args=[self.company.id]),
+            {
+                'username': 'x',
+                'password1': 'p@ssword1',
+                'password2': 'p@ssword1',
+                'role': 'new',
+                'new_role_name': 'Temp',
+            },
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_post_new_role_with_permission(self):
+        add_role_perm = Permission.objects.get_or_create(codename='add_role')[0]
+        self.role.permissions.add(add_role_perm)
+        self.client.login(username='creator', password='pass')
+        resp = self.client.post(
+            reverse('user_add', args=[self.company.id]),
+            {
+                'username': 'newu',
+                'password1': 'p@ssword1',
+                'password2': 'p@ssword1',
+                'role': 'new',
+                'new_role_name': 'TempRole',
+                'permissions': [],
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Role.objects.filter(name='TempRole', company=self.company).exists())
+
+

@@ -115,6 +115,8 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 | 34 | **UI/Integration Tests for Full Flow**                        | ✅ Implemented by Agent |
 | 35 | **Permissions Tests (Unauthorized Access Prevention)**        | ✅ Implemented by Agent |
 | 36 | **Permission Denied/Error Views (UI & API)**                  | ✅ Implemented by Agent |
+| 37 | **Audit Logging Middleware for all requests**                 | ✅ Implemented by Agent |
+| 38 | **Role Management (list/create/update) UI & API**             | ✅ Implemented by Agent |
 
 ---
 
@@ -132,3 +134,6 @@ Change password and profile edit now require the current password when performed
 Editing a user requires the `change_user` permission even for self edits.
 Password changes and user updates are logged via `AuditLog`.
 Buttons are hidden unless the user has the appropriate permission.
+Added audit logging middleware to capture every authenticated request.
+Implemented role management screens and ability to change a user's role during edit.
+Creating a new role from the user form now requires the `add_role` permission.

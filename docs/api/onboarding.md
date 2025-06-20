@@ -36,6 +36,7 @@
 - **Method:** `POST`
 - **Auth:** Company Admin or Superuser
 - **Payload:** `username`, `password1`, `password2`
+- **Notes:** if the acting user has `add_role` permission they may create a new role during user creation; otherwise only existing roles can be chosen.
 
 ## User Detail
 - **URL:** `/users/<id>/`
@@ -50,6 +51,14 @@
   - Current password must be supplied when editing your own profile.
 - **Payload:** standard user fields (`username`, `email`, etc.) plus `current_password` when self-editing.
 - **Audit:** all user edits are recorded in `AuditLog` entries.
+- **Notes:** new roles can be created during editing only when the user has `add_role` permission.
+
+## Role Management
+- **List Roles:** `GET /roles/`
+- **Create Role:** `POST /roles/add/`
+- **Update Role:** `POST /roles/<id>/edit/`
+- **Permissions:** `view_role`, `add_role`, `change_role`
+
 
 ## Toggle User Active
 - **URL:** `/users/<id>/toggle/`
