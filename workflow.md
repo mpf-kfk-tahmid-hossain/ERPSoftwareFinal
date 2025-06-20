@@ -145,8 +145,6 @@ Fixed profile picture display by configuring MEDIA_URL and MEDIA_ROOT.
 List views now share filter and pagination components. All list tables allow sorting by any column via reusable headers.
 Filter forms now use HTMX for live updates with a 500ms delay and include labels for each field. Sorting arrows display only on the active column and the user profile view uses cards with a recent activity table.
 
-Absolutely, here’s the new workflow in the **same style and format** as your current `workflow.md`, tailored to fit into your documentation and implementation approach.
-
 ---
 
 ## **Workflow Description: Product & Inventory Management (with Warehouse Stock Movement & Adjustment)**
