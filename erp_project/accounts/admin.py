@@ -4,9 +4,23 @@ from .models import *
 
 admin.site.register(Company)
 admin.site.register(Role)
-admin.site.register(User, DjangoUserAdmin)
 admin.site.register(UserRole)
 
+@admin.register(User)
+class CustomUserAdmin(DjangoUserAdmin):
+    # Show company in list view
+    list_display = DjangoUserAdmin.list_display + ('company',)
+    list_filter = DjangoUserAdmin.list_filter + ('company',)
+
+    # Add 'company' to fieldsets for editing existing users
+    fieldsets = DjangoUserAdmin.fieldsets + (
+        ('Company Info', {'fields': ('company',)}),
+    )
+
+    # Add 'company' to fieldsets for creating new users
+    add_fieldsets = DjangoUserAdmin.add_fieldsets + (
+        ('Company Info', {'fields': ('company',)}),
+    )
 
 @admin.register(Permission)
 class PermissionAdmin(admin.ModelAdmin):
