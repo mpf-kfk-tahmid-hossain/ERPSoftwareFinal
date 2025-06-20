@@ -30,6 +30,25 @@
 - **Method:** `GET`
 - **Auth:** Company Admin or Superuser
 - **Response:** List of users for company
+- **Query Params:** `q` search string, `sort` field (`-field` for descending), `is_active` filter, `page` for pagination
+
+## Company List
+- **URL:** `/companies/`
+- **Method:** `GET`
+- **Auth:** Superuser
+- **Query Params:** `q` search string, `sort` field (`-field` for descending), `page` for pagination
+
+## Role List
+- **URL:** `/roles/`
+- **Method:** `GET`
+- **Auth:** Company Admin
+- **Query Params:** `q` search string, `sort` field (`-field` for descending), `page` for pagination
+
+## Audit Log List
+- **URL:** `/audit-logs/`
+- **Method:** `GET`
+- **Auth:** Auditor or Superuser
+- **Query Params:** `q` search string, `request_type` filter, `sort` field (`-field` for descending), `page` for pagination
 
 ## Create Company User
 - **URL:** `/companies/<id>/users/add/`

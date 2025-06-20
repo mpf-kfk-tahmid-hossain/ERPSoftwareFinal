@@ -449,7 +449,7 @@ class AuditLogListTests(TestCase):
     def test_company_filtered_logs(self):
         self.client.login(username='u1', password='pass')
         resp = self.client.get(reverse('audit_log_list'))
-        self.assertEqual(len(resp.context['logs']), 1)
+        self.assertEqual(resp.context['page_obj'].paginator.count, 1)
         self.assertContains(resp, 'x')
 
 
@@ -476,5 +476,51 @@ class AuditLogDetailTests(TestCase):
         self.client.login(username='d1', password='pass')
         resp = self.client.get(reverse('audit_log_detail', args=[self.log2.id]))
         self.assertEqual(resp.status_code, 403)
+
+
+class UserListFeatureTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='SearchCo', code='SC', address='')
+        perm = Permission.objects.get_or_create(codename='view_user')[0]
+        role = Role.objects.get(name='Admin')
+        role.permissions.add(perm)
+        self.admin = User.objects.create_user(username='admin1', password='pass', company=self.company)
+        UserRole.objects.create(user=self.admin, role=role, company=self.company)
+        User.objects.create_user(username='alice', password='pass', company=self.company)
+        User.objects.create_user(username='bob', password='pass', company=self.company)
+
+    def test_search_filters_users(self):
+        self.client.login(username='admin1', password='pass')
+        resp = self.client.get(reverse('user_list', args=[self.company.id]), {'q': 'ali'})
+        self.assertContains(resp, 'alice')
+        self.assertNotContains(resp, 'bob')
+
+    def test_sort_users_by_email_desc(self):
+        self.client.login(username='admin1', password='pass')
+        resp = self.client.get(reverse('user_list', args=[self.company.id]), {'sort': '-email'})
+        users = list(resp.context['page_obj'])
+        self.assertGreater(len(users), 1)
+        emails = [u.email for u in users]
+        self.assertEqual(emails, sorted(emails, reverse=True))
+
+
+class CompanyListFeatureTests(TestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(username='admin', password='pass')
+        Company.objects.create(name='AlphaCo', code='A1', address='')
+        Company.objects.create(name='BetaCo', code='B1', address='')
+
+    def test_search_filters_companies(self):
+        self.client.login(username='admin', password='pass')
+        resp = self.client.get(reverse('company_list'), {'q': 'Beta'})
+        self.assertContains(resp, 'BetaCo')
+        self.assertNotContains(resp, 'AlphaCo')
+
+    def test_sort_companies_by_code(self):
+        self.client.login(username='admin', password='pass')
+        resp = self.client.get(reverse('company_list'), {'sort': 'code'})
+        companies = list(resp.context['page_obj'])
+        codes = [c.code for c in companies]
+        self.assertEqual(codes, sorted(codes))
 
 

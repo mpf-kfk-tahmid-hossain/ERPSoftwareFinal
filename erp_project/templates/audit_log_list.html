@@ -2,20 +2,21 @@
 {% block title %}Audit Logs{% endblock %}
 {% block content %}
 <h2>Audit Logs</h2>
+{% include 'includes/filter_form.html' %}
 <table class="table">
   <thead>
     <tr>
-      <th>Timestamp</th>
-      <th>User</th>
-      <th>Action</th>
-      <th>Type</th>
-      <th>Target</th>
-      <th>Company</th>
+      {% include 'includes/sortable_th.html' with label='Timestamp' field='timestamp' %}
+      {% include 'includes/sortable_th.html' with label='User' field='actor__username' %}
+      {% include 'includes/sortable_th.html' with label='Action' field='action' %}
+      {% include 'includes/sortable_th.html' with label='Type' field='request_type' %}
+      {% include 'includes/sortable_th.html' with label='Target' field='target_user' %}
+      {% include 'includes/sortable_th.html' with label='Company' field='company__name' %}
       <th></th>
     </tr>
   </thead>
   <tbody>
-    {% for log in logs %}
+  {% for log in page_obj %}
     <tr>
       <td>{{ log.timestamp }}</td>
       <td>{{ log.actor.username }}</td>
@@ -28,4 +29,5 @@
     {% endfor %}
   </tbody>
 </table>
+{% include 'includes/pagination.html' %}
 {% endblock %}

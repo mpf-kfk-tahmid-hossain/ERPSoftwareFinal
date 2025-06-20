@@ -2,12 +2,20 @@
 {% block title %}Companies{% endblock %}
 {% block content %}
 <h2>Companies</h2>
+{% include 'includes/filter_form.html' %}
 <table class="table">
-  <thead><tr><th>Name</th><th>Code</th><th>Address</th></tr></thead>
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      {% include 'includes/sortable_th.html' with label='Code' field='code' %}
+      {% include 'includes/sortable_th.html' with label='Address' field='address' %}
+    </tr>
+  </thead>
   <tbody>
-    {% for c in companies %}
+    {% for c in page_obj %}
     <tr><td>{{ c.name }}</td><td>{{ c.code }}</td><td>{{ c.address }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
+{% include 'includes/pagination.html' %}
 {% endblock %}

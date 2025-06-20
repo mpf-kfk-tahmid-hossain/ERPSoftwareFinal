@@ -1,0 +1,6 @@
+{% for perm in permissions %}
+<div class="form-check form-check-inline mb-1">
+  <input class="form-check-input" type="checkbox" name="permissions" value="{{ perm.id }}" id="perm{{ perm.id }}" {% if assigned_ids and perm.id in assigned_ids %}checked{% endif %}>
+  <label class="form-check-label me-2" for="perm{{ perm.id }}">{{ perm.codename }}</label>
+</div>
+{% endfor %}

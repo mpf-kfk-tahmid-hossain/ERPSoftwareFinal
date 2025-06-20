@@ -5,3 +5,4 @@ This project is a sample ERP system implemented with Django. It demonstrates mul
 ## Password Hashing
 
 Passwords are stored using the Argon2 hashing algorithm for improved security. Ensure `argon2-cffi` is installed when deploying.
+This project requires Pillow for profile picture uploads.

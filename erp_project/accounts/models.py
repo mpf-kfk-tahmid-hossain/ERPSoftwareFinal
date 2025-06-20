@@ -30,6 +30,7 @@ class Role(models.Model):
 
 class User(AbstractUser):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
 
 class UserRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

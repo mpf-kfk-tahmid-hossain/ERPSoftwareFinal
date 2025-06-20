@@ -1,0 +1,26 @@
+<form method="get" class="row mb-3">
+  {% if search %}
+  <div class="col-auto">
+    <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search">
+  </div>
+  {% endif %}
+  {% for f in filters %}
+  <div class="col-auto">
+    <select name="{{ f.name }}" class="form-select">
+      {% for opt in f.options %}
+      <option value="{{ opt.val }}" {% if f.current|stringformat:'s' == opt.val|stringformat:'s' %}selected{% endif %}>{{ opt.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endfor %}
+  {% if sort_options %}
+  <div class="col-auto">
+    <select name="sort" class="form-select">
+      {% for opt in sort_options %}
+      <option value="{{ opt.0 }}" {% if request.GET.sort == opt.0 %}selected{% endif %}>{{ opt.1 }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="col-auto"><button type="submit" class="btn btn-secondary">Filter</button></div>
+</form>
