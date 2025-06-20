@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from accounts.views import CustomLogoutView
 from accounts.views import (
     CustomLoginView, DashboardView, CompanyCreateView, CompanyListView,
@@ -51,4 +53,7 @@ urlpatterns = [
 
 from accounts.views import permission_denied_view
 handler403 = permission_denied_view
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
