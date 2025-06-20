@@ -49,12 +49,15 @@ class AuditLog(models.Model):
     target_user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='target_logs', null=True, blank=True
     )
+    request_type = models.CharField(max_length=10, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     action = models.CharField(max_length=50)
     details = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.actor} {self.action} {self.target_user or ''}" 
+        rt = f"[{self.request_type}]" if self.request_type else ""
+        return f"{self.actor} {self.action} {rt} {self.target_user or ''}".strip()
 
 
 class RolePermission(models.Model):
