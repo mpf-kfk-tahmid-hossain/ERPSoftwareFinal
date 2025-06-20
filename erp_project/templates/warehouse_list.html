@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Warehouses{% endblock %}
+{% block content %}
+<h2>Warehouses</h2>
+{% if user|has_permission:'add_warehouse' %}
+<a href="{% url 'warehouse_add' %}" class="btn btn-success mb-2">Add Warehouse</a>
+{% endif %}
+{% include 'includes/filter_form.html' %}
+<div id="list-container">
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      {% include 'includes/sortable_th.html' with label='Location' field='location' %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for wh in page_obj %}
+    <tr>
+      <td><a href="{% url 'warehouse_edit' wh.id %}">{{ wh.name }}</a></td>
+      <td>{{ wh.location }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import CustomLogoutView
@@ -46,12 +46,14 @@ urlpatterns = [
     path('roles/<int:pk>/edit/', RoleUpdateView.as_view(), name='role_edit'),
     path('audit-logs/', AuditLogListView.as_view(), name='audit_log_list'),
     path('audit-logs/<int:pk>/', AuditLogDetailView.as_view(), name='audit_log_detail'),
+    path('inventory/', include('inventory.urls')),
     path('api/whoami/', WhoAmIView.as_view(), name='whoami'),
     path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
     path('', DashboardView.as_view(), name='dashboard'),
 ]
 
 from accounts.views import permission_denied_view
+from django.urls import include
 handler403 = permission_denied_view
 
 if settings.DEBUG:
