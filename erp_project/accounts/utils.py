@@ -60,7 +60,7 @@ def user_has_permission(user, codename):
     return user.userrole_set.filter(role__permissions=perm, company=user.company).exists()
 
 
-def log_action(actor, action, target=None, details=""):
+def log_action(actor, action, target=None, details="", request_type=None, company=None):
     """Create an AuditLog entry.
 
     ``details`` can be a dictionary which will be stored as JSON.
@@ -68,5 +68,12 @@ def log_action(actor, action, target=None, details=""):
     from .models import AuditLog
     if isinstance(details, dict):
         details = json.dumps(details)
-    AuditLog.objects.create(actor=actor, action=action, target_user=target, details=details)
+    AuditLog.objects.create(
+        actor=actor,
+        action=action,
+        target_user=target,
+        details=details,
+        request_type=request_type,
+        company=company or getattr(actor, "company", None),
+    )
 

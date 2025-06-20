@@ -34,7 +34,12 @@ class CustomLoginView(LoginView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        log_action(self.request.user, 'login')
+        log_action(
+            self.request.user,
+            'login',
+            request_type=self.request.method,
+            company=self.request.user.company,
+        )
         return response
 from django.views.generic import DetailView, UpdateView, ListView, View
 from django.shortcuts import get_object_or_404, redirect, render
@@ -42,7 +47,7 @@ from django.http import JsonResponse
 from django.contrib.auth import get_user_model, logout
 from django.conf import settings
 from .forms import CompanyUserCreationForm
-from .models import Role, UserRole, Permission
+from .models import Role, UserRole, Permission, AuditLog
 
 User = get_user_model()
 
@@ -191,7 +196,13 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
             role = None
         if role:
             UserRole.objects.update_or_create(user=target, company=company, defaults={'role': role})
-        log_action(self.request.user, 'user_update', target)
+        log_action(
+            self.request.user,
+            'user_update',
+            target,
+            request_type=self.request.method,
+            company=self.request.user.company,
+        )
         return response
 
 @method_decorator(require_permission('change_user'), name='dispatch')
@@ -217,7 +228,13 @@ def change_password_view(request, pk):
         elif p1 and p1 == p2:
             target.set_password(p1)
             target.save()
-            log_action(request.user, 'password_change', target)
+            log_action(
+                request.user,
+                'password_change',
+                target,
+                request_type=request.method,
+                company=request.user.company,
+            )
             return redirect('user_detail', pk=target.pk)
         else:
             error = 'Passwords do not match'
@@ -286,6 +303,19 @@ class RoleUpdateView(LoginRequiredMixin, View):
         role.permissions.set(Permission.objects.filter(id__in=perm_ids))
         return redirect('role_list')
 
+
+@method_decorator(require_permission('view_auditlog'), name='dispatch')
+class AuditLogListView(LoginRequiredMixin, TemplateView):
+    template_name = 'audit_log_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        logs = AuditLog.objects.select_related('actor', 'target_user', 'company')
+        if not self.request.user.is_superuser:
+            logs = logs.filter(company=self.request.user.company)
+        context['logs'] = logs.order_by('-timestamp')[:100]
+        return context
+
 # Custom permission denied handler
 from django.http import HttpResponseForbidden
 from django.template import loader
@@ -301,7 +331,12 @@ class CustomLogoutView(View):
     """Allow GET logout to support navigation link."""
 
     def get(self, request):
-        log_action(request.user, 'logout')
+        log_action(
+            request.user,
+            'logout',
+            request_type=request.method,
+            company=request.user.company,
+        )
         logout(request)
         return redirect(settings.LOGOUT_REDIRECT_URL)
 

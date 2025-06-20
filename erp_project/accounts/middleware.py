@@ -26,5 +26,11 @@ class AuditLogMiddleware:
                     ]
                 },
             }
-            log_action(user, "request", details=details)
+            log_action(
+                user,
+                "request",
+                details=details,
+                request_type=request.method,
+                company=user.company,
+            )
         return response

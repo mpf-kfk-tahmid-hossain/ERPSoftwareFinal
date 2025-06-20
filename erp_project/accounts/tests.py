@@ -2,6 +2,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from .models import Company, Role, UserRole, Permission
+from .utils import log_action
 
 User = get_user_model()
 
@@ -342,9 +343,12 @@ class AuditMiddlewareTests(TestCase):
     def test_login_and_logout_logged(self):
         self.client.post(reverse('login'), {'username': 'auditor', 'password': 'pass'})
         from accounts.models import AuditLog
-        self.assertTrue(AuditLog.objects.filter(actor=self.user, action='login').exists())
+        log = AuditLog.objects.get(actor=self.user, action='login')
+        self.assertEqual(log.request_type, 'POST')
+        self.assertEqual(log.company, self.user.company)
         self.client.get(reverse('logout'))
-        self.assertTrue(AuditLog.objects.filter(actor=self.user, action='logout').exists())
+        log = AuditLog.objects.get(actor=self.user, action='logout')
+        self.assertEqual(log.request_type, 'GET')
 
 
 class RoleChangeTests(TestCase):
@@ -427,5 +431,25 @@ class AddRolePermissionTests(TestCase):
         )
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(Role.objects.filter(name='TempRole', company=self.company).exists())
+
+
+class AuditLogListTests(TestCase):
+    def setUp(self):
+        self.company1 = Company.objects.create(name='AL1', code='AL1', address='')
+        self.company2 = Company.objects.create(name='AL2', code='AL2', address='')
+        role = Role.objects.create(name='Auditor', company=self.company1)
+        perm = Permission.objects.get_or_create(codename='view_auditlog')[0]
+        role.permissions.add(perm)
+        self.user1 = User.objects.create_user(username='u1', password='pass', company=self.company1)
+        self.user2 = User.objects.create_user(username='u2', password='pass', company=self.company2)
+        UserRole.objects.create(user=self.user1, role=role, company=self.company1)
+        log_action(self.user1, 'x', request_type='GET', company=self.company1)
+        log_action(self.user2, 'y', request_type='POST', company=self.company2)
+
+    def test_company_filtered_logs(self):
+        self.client.login(username='u1', password='pass')
+        resp = self.client.get(reverse('audit_log_list'))
+        self.assertEqual(len(resp.context['logs']), 1)
+        self.assertContains(resp, 'x')
 
 

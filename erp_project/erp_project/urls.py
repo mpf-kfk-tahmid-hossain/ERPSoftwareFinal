@@ -22,6 +22,7 @@ from accounts.views import (
     CompanyDetailView, CompanyUpdateView, UserListView, CompanyUserCreateView,
     UserDetailView, UserUpdateView, UserToggleActiveView, WhoAmIView, DashboardAPI,
     RoleListView, RoleCreateView, RoleUpdateView, change_password_view,
+    AuditLogListView,
 )
 
 urlpatterns = [
@@ -41,6 +42,7 @@ urlpatterns = [
     path('roles/', RoleListView.as_view(), name='role_list'),
     path('roles/add/', RoleCreateView.as_view(), name='role_add'),
     path('roles/<int:pk>/edit/', RoleUpdateView.as_view(), name='role_edit'),
+    path('audit-logs/', AuditLogListView.as_view(), name='audit_log_list'),
     path('api/whoami/', WhoAmIView.as_view(), name='whoami'),
     path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
     path('', DashboardView.as_view(), name='dashboard'),

@@ -117,6 +117,7 @@ Here’s your **expanded checklist** including **CRUD views, session/auth, and a
 | 36 | **Permission Denied/Error Views (UI & API)**                  | ✅ Implemented by Agent |
 | 37 | **Audit Logging Middleware for all requests**                 | ✅ Implemented by Agent |
 | 38 | **Role Management (list/create/update) UI & API**             | ✅ Implemented by Agent |
+| 39 | **Audit Log list view with filtering**                        | ✅ Implemented by Agent |
 
 ---
 
