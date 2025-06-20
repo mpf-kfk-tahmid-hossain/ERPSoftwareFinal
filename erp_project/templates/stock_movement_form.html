@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Stock Movement{% endblock %}
+{% block content %}
+<h2>Add Stock Movement</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_product">Product</label>
+    <select name="product" id="id_product" class="form-select" required>
+      {% for p in products %}
+      <option value="{{ p.id }}">{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_warehouse">Warehouse</label>
+    <select name="warehouse" id="id_warehouse" class="form-select" required>
+      {% for w in warehouses %}
+      <option value="{{ w.id }}">{{ w.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_qty">Quantity</label>
+    <input type="number" step="0.01" name="qty" id="id_qty" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_mtype">Type</label>
+    <select name="movement_type" id="id_mtype" class="form-select" required>
+      <option value="IN">Inbound</option>
+      <option value="OUT">Outbound</option>
+      <option value="TR">Transfer</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_ref">Reference</label>
+    <input type="text" name="reference" id="id_ref" class="form-control">
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

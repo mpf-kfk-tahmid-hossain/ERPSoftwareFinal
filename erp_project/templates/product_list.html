@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<h2>Products</h2>
+{% if user|has_permission:'add_product' %}
+<a href="{% url 'product_add' %}" class="btn btn-success mb-2">Add Product</a>
+{% endif %}
+{% include 'includes/filter_form.html' %}
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      {% include 'includes/sortable_th.html' with label='SKU' field='sku' %}
+      <th>Unit</th><th>Brand</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in page_obj %}
+    <tr>
+      <td>{{ p.name }}</td><td>{{ p.sku }}</td><td>{{ p.unit.name }}</td><td>{{ p.brand }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+{% endblock %}

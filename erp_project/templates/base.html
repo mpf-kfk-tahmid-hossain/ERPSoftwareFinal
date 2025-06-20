@@ -21,6 +21,30 @@
         {% if user.is_authenticated and user.company and user|has_permission:'view_role' %}
         <li class="nav-item"><a class="nav-link" href="{% url 'role_list' %}">Roles</a></li>
         {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_warehouse' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'warehouse_list' %}">Warehouses</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_productcategory' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">Categories</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_productunit' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'unit_list' %}">Units</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_product' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}">Products</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_stocklot' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_lot_list' %}">Stock Lots</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_stockmovement' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_movement_list' %}">Stock Movements</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_inventoryadjustment' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'inventory_adjustment_list' %}">Adjustments</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and user|has_permission:'view_stock_on_hand' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_on_hand' %}">Stock On Hand</a></li>
+        {% endif %}
         {% if user.is_authenticated and user|has_permission:'view_auditlog' %}
         <li class="nav-item"><a class="nav-link" href="{% url 'audit_log_list' %}">Audit Logs</a></li>
         {% endif %}

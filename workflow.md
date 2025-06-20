@@ -232,19 +232,19 @@ After this workflow:
 
 | #  | Task                                               | Status            |
 | -- | -------------------------------------------------- | ----------------- |
-| 1  | **Product Category CRUD (API + UI)**               | ⬜ Not Implemented |
-| 2  | **Product Unit CRUD (API + UI)**                   | ⬜ Not Implemented |
-| 3  | **Product CRUD (API + UI)**                        | ⬜ Not Implemented |
-| 4  | **Warehouse CRUD (API + UI)**                      | ⬜ Not Implemented |
-| 5  | **Stock Lot CRUD (API + UI)**                      | ⬜ Not Implemented |
-| 6  | **Inventory Movement: In/Out/Transfer (API + UI)** | ⬜ Not Implemented |
-| 7  | **Inventory Adjustment (API + UI, with reason)**   | ⬜ Not Implemented |
-| 8  | **Stock On Hand Listing/Report (API + UI)**        | ⬜ Not Implemented |
-| 9  | **Audit Logging for Inventory Actions**            | ⬜ Not Implemented |
-| 10 | **Permission/Role Enforcement for all actions**    | ⬜ Not Implemented |
-| 11 | **Stock Movement History/Log (API + UI)**          | ⬜ Not Implemented |
-| 12 | **API Documentation for all endpoints**            | ⬜ Not Implemented |
-| 13 | **Integration/UI Tests for full workflow**         | ⬜ Not Implemented |
+| 1  | **Product Category CRUD (API + UI)**               | ✅ Implemented by Agent |
+| 2  | **Product Unit CRUD (API + UI)**                   | ✅ Implemented by Agent |
+| 3  | **Product CRUD (API + UI)**                        | ✅ Implemented by Agent |
+| 4  | **Warehouse CRUD (API + UI)**                      | ✅ Implemented by Agent |
+| 5  | **Stock Lot CRUD (API + UI)**                      | ✅ Implemented by Agent |
+| 6  | **Inventory Movement: In/Out/Transfer (API + UI)** | ✅ Implemented by Agent |
+| 7  | **Inventory Adjustment (API + UI, with reason)**   | ✅ Implemented by Agent |
+| 8  | **Stock On Hand Listing/Report (API + UI)**        | ✅ Implemented by Agent |
+| 9  | **Audit Logging for Inventory Actions**            | ✅ Implemented by Agent |
+| 10 | **Permission/Role Enforcement for all actions**    | ✅ Implemented by Agent |
+| 11 | **Stock Movement History/Log (API + UI)**          | ✅ Implemented by Agent |
+| 12 | **API Documentation for all endpoints**            | ✅ Implemented by Agent |
+| 13 | **Integration/UI Tests for full workflow**         | ✅ Implemented by Agent |
 
 ---
 
