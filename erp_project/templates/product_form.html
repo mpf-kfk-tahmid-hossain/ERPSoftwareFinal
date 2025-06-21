@@ -21,11 +21,11 @@
         <option value="{{ u.id }}">{{ u.name }}</option>
         {% endfor %}
       </select>
-      {% if perms.add_productunit %}
+      {% if can_add_productunit %}
       <button class="btn btn-outline-secondary" type="button" id="unit-add-btn">Add New</button>
       {% endif %}
     </div>
-    {% if perms.add_productunit %}
+    {% if can_add_productunit %}
     <div id="unit-add-form" class="mt-2" style="display:none;">
       <div class="row g-2">
         <div class="col">

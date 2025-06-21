@@ -6,6 +6,8 @@ from django.utils.decorators import method_decorator
 from django.db.models import Sum
 from accounts.utils import user_has_permission
 
+from accounts.models import UserRole
+
 from accounts.utils import AdvancedListMixin, require_permission, log_action
 from .models import (
     Warehouse,
@@ -370,7 +372,15 @@ class ProductListView(AdvancedListMixin, TemplateView):
 class ProductCreateView(View):
     def get(self, request):
         units = ProductUnit.objects.all()
-        return render(request, 'product_form.html', {'units': units})
+        can_add_productunit = user_has_permission(request.user, 'add_productunit')
+        return render(
+            request, 
+            'product_form.html', 
+            {
+                'units': units,
+                'can_add_productunit': can_add_productunit,
+            }
+            )
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
