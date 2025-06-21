@@ -160,8 +160,20 @@ class ProductCategoryCreateView(View):
                 'category': None,
             }
             return render(request, 'category_form.html', context)
+        if ProductCategory.objects.filter(name=name, company=request.user.company).exists():
+            roots = ProductCategory.objects.filter(
+                company=request.user.company, parent__isnull=True
+            ).order_by('name')
+            context = {
+                'error': 'Category with this name already exists',
+                'root_categories': roots,
+                'name': name,
+                'parent': parent_id,
+                'category': None,
+            }
+            return render(request, 'category_form.html', context)
         ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
-        return redirect('category_list')
+        return redirect('category_add')
 
 
 @method_decorator(require_permission('change_productcategory'), name='dispatch')
@@ -197,6 +209,18 @@ class ProductCategoryUpdateView(View):
             ).exclude(pk=category.pk).order_by('name')
             context = {
                 'error': 'Name required',
+                'category': category,
+                'root_categories': roots,
+                'name': name,
+                'parent': parent_id,
+            }
+            return render(request, 'category_form.html', context)
+        if ProductCategory.objects.filter(name=name, company=request.user.company).exclude(pk=category.pk).exists():
+            roots = ProductCategory.objects.filter(
+                company=request.user.company, parent__isnull=True
+            ).exclude(pk=category.pk).order_by('name')
+            context = {
+                'error': 'Category with this name already exists',
                 'category': category,
                 'root_categories': roots,
                 'name': name,
@@ -249,6 +273,8 @@ def category_rename(request, pk):
     name = request.POST.get('name', '').strip()
     if not name:
         return HttpResponseBadRequest('Name required')
+    if ProductCategory.objects.filter(name=name, company=request.user.company).exclude(pk=category.pk).exists():
+        return HttpResponseBadRequest('Category with this name already exists')
     category.name = name
     category.save()
     category.full_path_cached = category.full_path
@@ -284,8 +310,10 @@ def category_children(request):
     parent_id = request.GET.get('parent')
     level = int(request.GET.get('level', 1))
     parent = None
-    if parent_id:
+    if parent_id and parent_id.isdigit():
         parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
+    elif parent_id:
+        return HttpResponse('')
     cats = ProductCategory.objects.filter(parent=parent, company=request.user.company).order_by('name')
     return render(request, 'includes/category_select.html', {'categories': cats, 'level': level})
 
@@ -296,6 +324,8 @@ def category_quick_add(request):
     name = request.POST.get('name', '').strip()
     if not name:
         return HttpResponseBadRequest('Name required')
+    if ProductCategory.objects.filter(name=name, company=request.user.company).exists():
+        return HttpResponseBadRequest('Category with this name already exists')
     parent_id = request.POST.get('parent')
     parent = None
     if parent_id:
