@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
-from django.views.generic import TemplateView, View, UpdateView
+
+from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
 from django.db.models import Sum
 from accounts.utils import user_has_permission
@@ -48,28 +48,60 @@ class WarehouseListView(AdvancedListMixin, TemplateView):
 @method_decorator(require_permission('add_warehouse'), name='dispatch')
 class WarehouseCreateView(View):
     def get(self, request):
-        return render(request, 'warehouse_form.html')
+        context = {
+            'warehouse': None,
+            'name': '',
+            'location': '',
+        }
+        return render(request, 'warehouse_form.html', context)
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
         location = request.POST.get('location', '').strip()
         if not name:
-            return render(request, 'warehouse_form.html', {'error': 'Name required', 'location': location})
+            context = {
+                'error': 'Name required',
+                'name': name,
+                'location': location,
+                'warehouse': None,
+            }
+            return render(request, 'warehouse_form.html', context)
         Warehouse.objects.create(name=name, location=location, company=request.user.company)
         return redirect('warehouse_list')
 
 
 @method_decorator(require_permission('change_warehouse'), name='dispatch')
-class WarehouseUpdateView(UpdateView):
-    model = Warehouse
-    fields = ['name', 'location']
-    template_name = 'warehouse_form.html'
+class WarehouseUpdateView(View):
+    """Update an existing warehouse without using ModelForm."""
 
-    def get_queryset(self):
-        return Warehouse.objects.filter(company=self.request.user.company)
+    def get_object(self, pk, user):
+        return get_object_or_404(Warehouse, pk=pk, company=user.company)
 
-    def get_success_url(self):
-        return reverse_lazy('warehouse_list')
+    def get(self, request, pk):
+        warehouse = self.get_object(pk, request.user)
+        context = {
+            'warehouse': warehouse,
+            'name': warehouse.name,
+            'location': warehouse.location,
+        }
+        return render(request, 'warehouse_form.html', context)
+
+    def post(self, request, pk):
+        warehouse = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        location = request.POST.get('location', '').strip()
+        if not name:
+            context = {
+                'error': 'Name required',
+                'warehouse': warehouse,
+                'name': name,
+                'location': location,
+            }
+            return render(request, 'warehouse_form.html', context)
+        warehouse.name = name
+        warehouse.location = location
+        warehouse.save()
+        return redirect('warehouse_list')
 
 
 @method_decorator(require_permission('view_productcategory'), name='dispatch')
@@ -99,7 +131,13 @@ class ProductCategoryListView(AdvancedListMixin, TemplateView):
 class ProductCategoryCreateView(View):
     def get(self, request):
         cats = ProductCategory.objects.filter(company=request.user.company)
-        return render(request, 'category_form.html', {'categories': cats})
+        context = {
+            'categories': cats,
+            'category': None,
+            'name': '',
+            'parent': '',
+        }
+        return render(request, 'category_form.html', context)
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
@@ -109,27 +147,57 @@ class ProductCategoryCreateView(View):
             parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
         if not name:
             cats = ProductCategory.objects.filter(company=request.user.company)
-            return render(request, 'category_form.html', {'error': 'Name required', 'categories': cats})
+            context = {
+                'error': 'Name required',
+                'categories': cats,
+                'name': name,
+                'parent': parent_id,
+                'category': None,
+            }
+            return render(request, 'category_form.html', context)
         ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
         return redirect('category_list')
 
 
 @method_decorator(require_permission('change_productcategory'), name='dispatch')
-class ProductCategoryUpdateView(UpdateView):
-    model = ProductCategory
-    fields = ['name', 'parent']
-    template_name = 'category_form.html'
+class ProductCategoryUpdateView(View):
+    """Update a product category without ModelForms."""
 
-    def get_queryset(self):
-        return ProductCategory.objects.filter(company=self.request.user.company)
+    def get_object(self, pk, user):
+        return get_object_or_404(ProductCategory, pk=pk, company=user.company)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['categories'] = ProductCategory.objects.filter(company=self.request.user.company).exclude(pk=self.object.pk)
-        return context
+    def get(self, request, pk):
+        category = self.get_object(pk, request.user)
+        cats = ProductCategory.objects.filter(company=request.user.company).exclude(pk=category.pk)
+        context = {
+            'category': category,
+            'categories': cats,
+            'name': category.name,
+            'parent': category.parent_id,
+        }
+        return render(request, 'category_form.html', context)
 
-    def get_success_url(self):
-        return reverse_lazy('category_list')
+    def post(self, request, pk):
+        category = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        parent_id = request.POST.get('parent')
+        parent = None
+        if parent_id:
+            parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
+        if not name:
+            cats = ProductCategory.objects.filter(company=request.user.company).exclude(pk=category.pk)
+            context = {
+                'error': 'Name required',
+                'category': category,
+                'categories': cats,
+                'name': name,
+                'parent': parent_id,
+            }
+            return render(request, 'category_form.html', context)
+        category.name = name
+        category.parent = parent
+        category.save()
+        return redirect('category_list')
 
 
 @method_decorator(require_permission('view_productunit'), name='dispatch')
@@ -158,13 +226,18 @@ class ProductUnitListView(AdvancedListMixin, TemplateView):
 @method_decorator(require_permission('add_productunit'), name='dispatch')
 class ProductUnitCreateView(View):
     def get(self, request):
-        return render(request, 'product_unit_form.html')
+        context = {
+            'code': '',
+            'name': '',
+        }
+        return render(request, 'product_unit_form.html', context)
 
     def post(self, request):
         code = request.POST.get('code', '').strip()
         name = request.POST.get('name', '').strip()
         if not code or not name:
-            return render(request, 'product_unit_form.html', {'error': 'All fields required', 'code': code, 'name': name})
+            context = {'error': 'All fields required', 'code': code, 'name': name}
+            return render(request, 'product_unit_form.html', context)
         ProductUnit.objects.create(code=code, name=name)
         log_action(request.user, 'create_unit', details={'code': code})
         return redirect('unit_list')

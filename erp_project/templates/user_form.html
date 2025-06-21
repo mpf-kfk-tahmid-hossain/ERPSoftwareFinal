@@ -6,28 +6,28 @@
   {% csrf_token %}
   <div class="mb-3">
     <label for="id_username" class="form-label">Username</label>
-    <input type="text" name="username" id="id_username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+    <input type="text" name="username" id="id_username" class="form-control" value="{{ username }}" required>
     {% for error in form.username.errors %}
       <div class="invalid-feedback">{{ error }}</div>
     {% endfor %}
   </div>
   <div class="mb-3">
     <label for="id_email" class="form-label">Email</label>
-    <input type="email" name="email" id="id_email" class="form-control" value="{{ form.email.value|default:'' }}">
+    <input type="email" name="email" id="id_email" class="form-control" value="{{ email }}">
     {% for error in form.email.errors %}
       <div class="invalid-feedback">{{ error }}</div>
     {% endfor %}
   </div>
   <div class="mb-3">
     <label for="id_first_name" class="form-label">First name</label>
-    <input type="text" name="first_name" id="id_first_name" class="form-control" value="{{ form.first_name.value|default:'' }}">
+    <input type="text" name="first_name" id="id_first_name" class="form-control" value="{{ first_name }}">
     {% for error in form.first_name.errors %}
       <div class="invalid-feedback">{{ error }}</div>
     {% endfor %}
   </div>
   <div class="mb-3">
     <label for="id_last_name" class="form-label">Last name</label>
-    <input type="text" name="last_name" id="id_last_name" class="form-control" value="{{ form.last_name.value|default:'' }}">
+    <input type="text" name="last_name" id="id_last_name" class="form-control" value="{{ last_name }}">
     {% for error in form.last_name.errors %}
       <div class="invalid-feedback">{{ error }}</div>
     {% endfor %}

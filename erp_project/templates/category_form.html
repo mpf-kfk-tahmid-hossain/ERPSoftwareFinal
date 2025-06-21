@@ -1,21 +1,20 @@
 {% extends 'base.html' %}
 {% block title %}Category{% endblock %}
 {% block content %}
-<h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Category</h2>
+<h2>{% if category %}Edit{% else %}Add{% endif %} Category</h2>
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
   <div class="mb-3">
     <label for="id_name" class="form-label">Name</label>
-    <input type="text" name="name" id="id_name" class="form-control" value="{{ form.name.value|default:'' }}" required>
-    {% if error and not form.name %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
-    {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
+    {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
   </div>
   <div class="mb-3">
     <label for="id_parent" class="form-label">Parent</label>
     <select name="parent" id="id_parent" class="form-select">
       <option value="">----</option>
       {% for c in categories %}
-      <option value="{{ c.id }}" {% if form.parent.value|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+      <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
       {% endfor %}
     </select>
   </div>

@@ -21,7 +21,10 @@ class WarehouseViewTests(TestCase):
         self.user = User.objects.create_user(username='inv', password='pass', company=self.company)
         role = Role.objects.get(name='Admin')
         # grant new permissions to admin role for tests
-        perms = ['add_warehouse', 'view_warehouse', 'add_productcategory', 'view_productcategory']
+        perms = [
+            'add_warehouse', 'view_warehouse', 'change_warehouse',
+            'add_productcategory', 'view_productcategory', 'change_productcategory'
+        ]
         for codename in perms:
             perm, _ = Permission.objects.get_or_create(codename=codename)
             role.permissions.add(perm)
@@ -33,13 +36,21 @@ class WarehouseViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(Warehouse.objects.filter(name='Main', company=self.company).exists())
 
+    def test_get_warehouse_forms(self):
+        resp = self.client.get(reverse('warehouse_add'))
+        self.assertEqual(resp.status_code, 200)
+        wh = Warehouse.objects.create(name='EditW', location='Loc', company=self.company)
+        resp = self.client.get(reverse('warehouse_edit', args=[wh.id]))
+        self.assertContains(resp, 'value="EditW"')
+        self.assertContains(resp, 'value="Loc"')
+
 
 class CategoryViewTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name='InvCo', code='IC', address='')
         self.user = User.objects.create_user(username='inv', password='pass', company=self.company)
         role = Role.objects.get(name='Admin')
-        perms = ['add_productcategory', 'view_productcategory']
+        perms = ['add_productcategory', 'view_productcategory', 'change_productcategory']
         for codename in perms:
             perm, _ = Permission.objects.get_or_create(codename=codename)
             role.permissions.add(perm)
@@ -50,6 +61,13 @@ class CategoryViewTests(TestCase):
         resp = self.client.post(reverse('category_add'), {'name': 'Cat1'})
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(ProductCategory.objects.filter(name='Cat1', company=self.company).exists())
+
+    def test_get_category_forms(self):
+        resp = self.client.get(reverse('category_add'))
+        self.assertEqual(resp.status_code, 200)
+        cat = ProductCategory.objects.create(name='Old', company=self.company)
+        resp = self.client.get(reverse('category_edit', args=[cat.id]))
+        self.assertContains(resp, 'value="Old"')
 
 
 class ProductFlowTests(TestCase):
@@ -193,4 +211,18 @@ class InventoryEndToEndTests(TestCase):
         # audit log list accessible
         log_resp = self.client.get(reverse('audit_log_list'))
         self.assertEqual(log_resp.status_code, 200)
+
+
+class TemplateValueSanityTests(TestCase):
+    """Ensure templates do not use fallback expressions in value attributes."""
+
+    def test_templates_do_not_use_default_filter_in_values(self):
+        import re
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent / 'templates'
+        pattern = re.compile(r'value="{{[^"}]*\|')
+        for tpl in base.rglob('*.html'):
+            content = tpl.read_text()
+            matches = pattern.findall(content)
+            self.assertFalse(matches, f"Unexpected default filter in {tpl}")
 

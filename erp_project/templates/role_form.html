@@ -7,11 +7,11 @@
   {% csrf_token %}
   <div class="mb-3">
     <label for="id_name" class="form-label">Name</label>
-    <input type="text" name="name" id="id_name" class="form-control" value="{{ role.name|default:'' }}" required>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
   </div>
   <div class="mb-3">
     <label for="id_description" class="form-label">Description</label>
-    <input type="text" name="description" id="id_description" class="form-control" value="{{ role.description|default:'' }}">
+    <input type="text" name="description" id="id_description" class="form-control" value="{{ description }}">
   </div>
   <div class="mb-3">
     <label class="form-label">Permissions</label><br>
