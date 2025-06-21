@@ -4,24 +4,28 @@
 <h2>{% if category %}Edit{% else %}Add{% endif %} Category</h2>
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
-  <div class="mb-3">
-    <label for="id_name" class="form-label">Name</label>
-    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
-    {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
-  </div>
   <input type="hidden" name="parent" id="id_parent_hidden" value="{{ parent }}">
   <div id="category-selects">
     <div class="mb-3" id="level-1">
       <label class="form-label">Level 1 Category</label>
-      <select name="parent" class="form-select category-select" data-level="1"
-              hx-get="{% url 'category_children' %}?level=2" hx-target="#level-2" hx-trigger="change">
-        <option value="">-- None --</option>
-        {% for c in root_categories %}
-        <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
+      <div class="input-group">
+        <select name="parent" class="form-select category-select" data-level="1"
+                hx-get="{% url 'category_children' %}?level=2" hx-target="#level-2" hx-trigger="change">
+          <option value="">-- None --</option>
+          {% for c in root_categories %}
+          <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-secondary add-btn" data-level="1">Add</button>
+      </div>
+      <div class="add-container"></div>
     </div>
     <div id="level-2"></div>
+  </div>
+  <div class="mb-3">
+    <label for="id_name" class="form-label">Name</label>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
+    {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
   </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>
@@ -37,9 +41,31 @@ document.getElementById('category-selects').addEventListener('change',function(e
   if(e.target.classList.contains('category-select')){
     const level=parseInt(e.target.dataset.level);
     document.querySelectorAll('.category-select').forEach(sel=>{
-      if(parseInt(sel.dataset.level)>level){sel.parentElement.remove();}
+      if(parseInt(sel.dataset.level)>level){sel.closest('.mb-3').remove();}
     });
     updateParent();
+  }
+});
+
+const quickAddUrl = "{% url 'category_quick_add' %}";
+document.getElementById('category-selects').addEventListener('click',function(e){
+  if(e.target.classList.contains('add-btn')){
+    const level=e.target.dataset.level;
+    const wrapper=document.getElementById('level-'+level);
+    const select=wrapper.querySelector('select');
+    const parentVal=select.value;
+    wrapper.querySelector('.add-container').innerHTML=`<form class="add-form mt-2 d-flex" data-level="${level}" hx-post="${quickAddUrl}" hx-target="#level-${level} select" hx-swap="beforeend"><input type="hidden" name="parent" value="${parentVal}"><input type="text" name="name" class="form-control me-2" required><button class="btn btn-primary" type="submit">Add</button></form>`;
+  }
+});
+
+document.body.addEventListener('htmx:afterRequest',function(e){
+  if(e.target.classList.contains('add-form')){
+    const level=e.target.dataset.level;
+    const select=document.querySelector(`#level-${level} select`);
+    const opt=select.querySelector('option[selected]');
+    if(opt){select.value=opt.value;}
+    select.dispatchEvent(new Event('change'));
+    e.target.remove();
   }
 });
 </script>

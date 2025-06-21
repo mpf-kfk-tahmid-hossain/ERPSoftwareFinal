@@ -25,6 +25,13 @@
 - **Payload:** `name`, `parent` (optional)
 - **Response:** Redirect to category list
 
+### Quick Add Category
+- **URL:** `/inventory/categories/quick-add/`
+- **Method:** `POST`
+- **Auth:** `add_productcategory`
+- **Payload:** `name`, `parent` (optional)
+- **Response:** HTML `<option>` for the new category (201)
+
 ## Category Tree
 - **URL:** `/inventory/category-tree/`
 - **Method:** `GET`

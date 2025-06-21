@@ -290,6 +290,20 @@ def category_children(request):
     return render(request, 'includes/category_select.html', {'categories': cats, 'level': level})
 
 
+@require_permission('add_productcategory')
+def category_quick_add(request):
+    """Create a category via HTMX and return an option element."""
+    name = request.POST.get('name', '').strip()
+    if not name:
+        return HttpResponseBadRequest('Name required')
+    parent_id = request.POST.get('parent')
+    parent = None
+    if parent_id:
+        parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
+    category = ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
+    return render(request, 'includes/category_option.html', {'category': category}, status=201)
+
+
 @method_decorator(require_permission('view_productunit'), name='dispatch')
 class ProductUnitListView(AdvancedListMixin, TemplateView):
     template_name = 'product_unit_list.html'
