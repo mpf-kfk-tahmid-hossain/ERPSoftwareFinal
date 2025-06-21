@@ -243,6 +243,7 @@ After this workflow:
 | 11 | **Stock Movement History/Log (API + UI)**          | ✅ Implemented by Agent |
 | 12 | **API Documentation for all endpoints**            | ✅ Implemented by Agent |
 | 13 | **Integration/UI Tests for full workflow**         | ✅ Implemented by Agent |
+| 14 | **Category Tree management UI**                    | ✅ Implemented by Agent |
 
 ---
 

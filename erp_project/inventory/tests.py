@@ -70,6 +70,47 @@ class CategoryViewTests(TestCase):
         self.assertContains(resp, 'value="Old"')
 
 
+class CategoryTreeTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='TreeCo', code='TC', address='')
+        self.user = User.objects.create_user(username='tree', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = [
+            'add_productcategory', 'view_productcategory', 'change_productcategory', 'delete_productcategory'
+        ]
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='tree', password='pass')
+
+    def test_tree_view(self):
+        ProductCategory.objects.create(name='Root', company=self.company)
+        resp = self.client.get(reverse('category_tree'))
+        self.assertContains(resp, 'Category Tree')
+
+    def test_move_and_rename_delete(self):
+        root = ProductCategory.objects.create(name='Root', company=self.company)
+        child = ProductCategory.objects.create(name='Child', company=self.company)
+        resp = self.client.post(reverse('category_move', args=[child.id]), {'parent': root.id})
+        self.assertEqual(resp.status_code, 200)
+        child.refresh_from_db()
+        self.assertEqual(child.parent, root)
+        resp = self.client.post(reverse('category_rename', args=[child.id]), {'name': 'New'})
+        self.assertEqual(resp.status_code, 200)
+        child.refresh_from_db()
+        self.assertEqual(child.name, 'New')
+        resp = self.client.post(reverse('category_delete', args=[child.id]))
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(ProductCategory.objects.filter(pk=child.id).exists())
+
+    def test_circular_move_blocked(self):
+        root = ProductCategory.objects.create(name='Root', company=self.company)
+        child = ProductCategory.objects.create(name='Child', parent=root, company=self.company)
+        resp = self.client.post(reverse('category_move', args=[root.id]), {'parent': child.id})
+        self.assertEqual(resp.status_code, 400)
+
+
 class ProductFlowTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name='ProdCo', code='PC', address='')
