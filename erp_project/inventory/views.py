@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse, HttpResponseBadRequest
 
 from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
@@ -198,6 +199,75 @@ class ProductCategoryUpdateView(View):
         category.parent = parent
         category.save()
         return redirect('category_list')
+
+
+@method_decorator(require_permission('view_productcategory'), name='dispatch')
+class CategoryTreeView(TemplateView):
+    """Display product categories as an expandable tree."""
+
+    template_name = 'category_tree.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cats = ProductCategory.objects.filter(company=self.request.user.company).select_related('parent')
+        by_parent = {}
+        for c in cats:
+            by_parent.setdefault(c.parent_id, []).append(c)
+            c.children_list = []
+        for children in by_parent.values():
+            children.sort(key=lambda x: x.name.lower())
+        for c in cats:
+            c.children_list = by_parent.get(c.id, [])
+        roots = by_parent.get(None, [])
+
+        def annotate(cat, path=""):
+            cat.full_path_cached = f"{path} > {cat.name}" if path else cat.name
+            for ch in cat.children_list:
+                annotate(ch, cat.full_path_cached)
+
+        for r in roots:
+            annotate(r)
+        context['categories'] = roots
+        context['can_add_category'] = user_has_permission(self.request.user, 'add_productcategory')
+        context['csrf_token'] = self.request.COOKIES.get('csrftoken')
+        return context
+
+
+@require_permission('change_productcategory')
+def category_rename(request, pk):
+    category = get_object_or_404(ProductCategory, pk=pk, company=request.user.company)
+    if request.method == 'GET':
+        return render(request, 'category_rename_form.html', {'category': category})
+    name = request.POST.get('name', '').strip()
+    if not name:
+        return HttpResponseBadRequest('Name required')
+    category.name = name
+    category.save()
+    category.full_path_cached = category.full_path
+    return render(request, 'includes/category_node.html', {'cat': category, 'editing': False})
+
+
+@require_permission('change_productcategory')
+def category_move(request, pk):
+    category = get_object_or_404(ProductCategory, pk=pk, company=request.user.company)
+    parent_id = request.POST.get('parent')
+    new_parent = None
+    if parent_id:
+        new_parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
+        if category == new_parent or category.is_ancestor_of(new_parent):
+            return HttpResponseBadRequest('Invalid parent')
+    category.parent = new_parent
+    category.save()
+    return HttpResponse('OK')
+
+
+@require_permission('delete_productcategory')
+def category_delete(request, pk):
+    category = get_object_or_404(ProductCategory, pk=pk, company=request.user.company)
+    if request.method == 'POST':
+        category.delete()
+        return HttpResponse('', status=204)
+    return HttpResponseBadRequest('Invalid request')
 
 
 @method_decorator(require_permission('view_productunit'), name='dispatch')

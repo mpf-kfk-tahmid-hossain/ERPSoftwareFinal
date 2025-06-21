@@ -1,0 +1,20 @@
+<li class="mb-1" data-id="{{ cat.id }}">
+  <div class="d-flex align-items-center">
+    {% if cat.children_list %}
+    <button class="btn btn-sm btn-light me-1" type="button" data-bs-toggle="collapse" data-bs-target="#cat-{{ cat.id }}">+</button>
+    {% else %}
+    <span class="me-1"></span>
+    {% endif %}
+    <span class="cat-name flex-grow-1" draggable="true">{{ cat.name }}</span>
+    <small class="text-muted ms-2">{{ cat.full_path_cached|default:cat.full_path }}</small>
+    <button class="btn btn-sm btn-link rename-btn" hx-get="{% url 'category_rename' cat.id %}" hx-target="closest li" hx-swap="outerHTML">Rename</button>
+    <button class="btn btn-sm btn-link text-danger" hx-post="{% url 'category_delete' cat.id %}" hx-confirm="Delete?" hx-target="closest li" hx-swap="outerHTML">Delete</button>
+  </div>
+  {% if cat.children_list %}
+  <ul id="cat-{{ cat.id }}" class="collapse ms-4">
+    {% for child in cat.children_list %}
+      {% include 'includes/category_node.html' with cat=child %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</li>

@@ -25,6 +25,22 @@ class ProductCategory(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def is_ancestor_of(self, other: 'ProductCategory') -> bool:
+        """Return True if this category is an ancestor of ``other``."""
+        current = other.parent
+        while current:
+            if current.pk == self.pk:
+                return True
+            current = current.parent
+        return False
+
+    @property
+    def full_path(self) -> str:
+        """Return the full path name using ``>`` as separator."""
+        if self.parent:
+            return f"{self.parent.full_path} > {self.name}"
+        return self.name
+
 
 class ProductUnit(models.Model):
     """Unit of measure for a product."""
