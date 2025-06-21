@@ -23,7 +23,8 @@
 - **Method:** `POST`
 - **Auth:** `add_productcategory`
 - **Payload:** `name`, `parent` (optional)
-- **Response:** Redirect to category list
+- **Response:** Redirect back to the add form
+- **Notes:** Category names must be unique per company
 
 ### Quick Add Category
 - **URL:** `/inventory/categories/quick-add/`

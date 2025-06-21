@@ -62,6 +62,12 @@ class CategoryViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(ProductCategory.objects.filter(name='Cat1', company=self.company).exists())
 
+    def test_duplicate_category_rejected(self):
+        ProductCategory.objects.create(name='Unique', company=self.company)
+        resp = self.client.post(reverse('category_add'), {'name': 'Unique'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(ProductCategory.objects.filter(name='Unique', company=self.company).count(), 1)
+
     def test_get_category_forms(self):
         resp = self.client.get(reverse('category_add'))
         self.assertEqual(resp.status_code, 200)
@@ -80,6 +86,11 @@ class CategoryViewTests(TestCase):
         resp = self.client.post(reverse('category_quick_add'), {'name': 'Quick'})
         self.assertEqual(resp.status_code, 201)
         self.assertTrue(ProductCategory.objects.filter(name='Quick', company=self.company).exists())
+
+    def test_quick_add_duplicate(self):
+        ProductCategory.objects.create(name='Dup', company=self.company)
+        resp = self.client.post(reverse('category_quick_add'), {'name': 'Dup'})
+        self.assertEqual(resp.status_code, 400)
 
 
 class CategoryTreeTests(TestCase):
@@ -115,6 +126,12 @@ class CategoryTreeTests(TestCase):
         resp = self.client.post(reverse('category_delete', args=[child.id]))
         self.assertEqual(resp.status_code, 204)
         self.assertFalse(ProductCategory.objects.filter(pk=child.id).exists())
+
+    def test_rename_duplicate_rejected(self):
+        cat1 = ProductCategory.objects.create(name='A', company=self.company)
+        cat2 = ProductCategory.objects.create(name='B', company=self.company)
+        resp = self.client.post(reverse('category_rename', args=[cat2.id]), {'name': 'A'})
+        self.assertEqual(resp.status_code, 400)
 
     def test_circular_move_blocked(self):
         root = ProductCategory.objects.create(name='Root', company=self.company)

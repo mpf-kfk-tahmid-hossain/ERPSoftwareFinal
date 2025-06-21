@@ -15,14 +15,15 @@
           {% for c in root_categories %}
           <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
+          <option value="__new__">Create New Level 1 Category</option>
         </select>
-        <button type="button" class="btn btn-outline-secondary add-btn" data-level="1">Add</button>
+        
       </div>
       <div class="add-container"></div>
     </div>
     <div id="level-2"></div>
   </div>
-  <div class="mb-3">
+  <div class="mb-3" id="name-container" {% if not category %}style="display:none"{% endif %}>
     <label for="id_name" class="form-label">Name</label>
     <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
     {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
@@ -35,7 +36,13 @@ function updateParent(){
   document.querySelectorAll('.category-select').forEach(s=>{if(s.value){val=s.value;}});
   document.getElementById('id_parent_hidden').value=val;
 }
+function toggleName(){
+  const val=document.querySelector('#level-1 select').value;
+  const cont=document.getElementById('name-container');
+  cont.style.display=(val==='__new__')?'block':'none';
+}
 updateParent();
+toggleName();
 
 document.getElementById('category-selects').addEventListener('change',function(e){
   if(e.target.classList.contains('category-select')){
@@ -44,6 +51,7 @@ document.getElementById('category-selects').addEventListener('change',function(e
       if(parseInt(sel.dataset.level)>level){sel.closest('.mb-3').remove();}
     });
     updateParent();
+    if(level===1){toggleName();}
   }
 });
 

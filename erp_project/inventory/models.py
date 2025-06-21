@@ -25,6 +25,14 @@ class ProductCategory(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "company"],
+                name="unique_category_per_company",
+            )
+        ]
+
     def is_ancestor_of(self, other: 'ProductCategory') -> bool:
         """Return True if this category is an ancestor of ``other``."""
         current = other.parent
