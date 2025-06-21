@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('category-selects').addEventListener('change',e=>{if(e.target.classList.contains('category-select'))handleSelectChange(e);});
 });
 
-{% if perms.add_productunit %}
+{% can_add_productunit %}
 document.getElementById('unit-add-btn').addEventListener('click',()=>{
   document.getElementById('unit-add-form').style.display='block';
 });
