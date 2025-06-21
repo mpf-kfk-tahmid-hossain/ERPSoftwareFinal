@@ -9,15 +9,38 @@
     <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
     {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
   </div>
-  <div class="mb-3">
-    <label for="id_parent" class="form-label">Parent</label>
-    <select name="parent" id="id_parent" class="form-select">
-      <option value="">----</option>
-      {% for c in categories %}
-      <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
-      {% endfor %}
-    </select>
+  <input type="hidden" name="parent" id="id_parent_hidden" value="{{ parent }}">
+  <div id="category-selects">
+    <div class="mb-3" id="level-1">
+      <label class="form-label">Level 1 Category</label>
+      <select name="parent" class="form-select category-select" data-level="1"
+              hx-get="{% url 'category_children' %}?level=2" hx-target="#level-2" hx-trigger="change">
+        <option value="">-- None --</option>
+        {% for c in root_categories %}
+        <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div id="level-2"></div>
   </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>
+<script>
+function updateParent(){
+  let val='';
+  document.querySelectorAll('.category-select').forEach(s=>{if(s.value){val=s.value;}});
+  document.getElementById('id_parent_hidden').value=val;
+}
+updateParent();
+
+document.getElementById('category-selects').addEventListener('change',function(e){
+  if(e.target.classList.contains('category-select')){
+    const level=parseInt(e.target.dataset.level);
+    document.querySelectorAll('.category-select').forEach(sel=>{
+      if(parseInt(sel.dataset.level)>level){sel.parentElement.remove();}
+    });
+    updateParent();
+  }
+});
+</script>
 {% endblock %}

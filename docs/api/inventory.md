@@ -51,6 +51,13 @@
 - **Auth:** `delete_productcategory`
 - **Response:** `204 No Content`
 
+### Category Children
+- **URL:** `/inventory/categories/children/`
+- **Method:** `GET`
+- **Auth:** `view_productcategory`
+- **Params:** `parent` (optional category id), `level` (next level number)
+- **Response:** HTML snippet with a select for child categories
+
 ## List Units
 - **URL:** `/inventory/units/`
 - **Method:** `GET`
