@@ -233,36 +233,6 @@ class ProductCategoryUpdateView(View):
         return redirect('category_list')
 
 
-@method_decorator(require_permission('view_productcategory'), name='dispatch')
-class CategoryTreeView(TemplateView):
-    """Display product categories as an expandable tree."""
-
-    template_name = 'category_tree.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        cats = ProductCategory.objects.filter(company=self.request.user.company).select_related('parent')
-        by_parent = {}
-        for c in cats:
-            by_parent.setdefault(c.parent_id, []).append(c)
-            c.children_list = []
-        for children in by_parent.values():
-            children.sort(key=lambda x: x.name.lower())
-        for c in cats:
-            c.children_list = by_parent.get(c.id, [])
-        roots = by_parent.get(None, [])
-
-        def annotate(cat, path=""):
-            cat.full_path_cached = f"{path} > {cat.name}" if path else cat.name
-            for ch in cat.children_list:
-                annotate(ch, cat.full_path_cached)
-
-        for r in roots:
-            annotate(r)
-        context['categories'] = roots
-        context['can_add_category'] = user_has_permission(self.request.user, 'add_productcategory')
-        context['csrf_token'] = self.request.COOKIES.get('csrftoken')
-        return context
 
 
 @require_permission('change_productcategory')
@@ -315,7 +285,10 @@ def category_children(request):
     elif parent_id:  # something invalid
         return JsonResponse([], safe=False)
     cats = ProductCategory.objects.filter(parent=parent, company=request.user.company).order_by('name')
-    data = [{'id': c.id, 'name': c.name} for c in cats]
+    data = []
+    for c in cats:
+        has_children = ProductCategory.objects.filter(parent=c).exists()
+        data.append({'id': c.id, 'name': c.name, 'has_children': has_children})
     return JsonResponse(data, safe=False)
 
 

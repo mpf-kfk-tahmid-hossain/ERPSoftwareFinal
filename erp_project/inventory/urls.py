@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     WarehouseListView, WarehouseCreateView, WarehouseUpdateView,
     ProductCategoryListView, ProductCategoryCreateView, ProductCategoryUpdateView,
-    CategoryTreeView, category_rename, category_move, category_delete, category_children, category_quick_add,
+    category_rename, category_move, category_delete, category_children, category_quick_add,
     ProductUnitListView, ProductUnitCreateView,
     ProductListView, ProductCreateView,
     StockLotListView, StockLotCreateView,
@@ -16,7 +16,6 @@ urlpatterns = [
     path('warehouses/add/', WarehouseCreateView.as_view(), name='warehouse_add'),
     path('warehouses/<int:pk>/edit/', WarehouseUpdateView.as_view(), name='warehouse_edit'),
     path('categories/', ProductCategoryListView.as_view(), name='category_list'),
-    path('category-tree/', CategoryTreeView.as_view(), name='category_tree'),
     path('categories/add/', ProductCategoryCreateView.as_view(), name='category_add'),
     path('categories/<int:pk>/edit/', ProductCategoryUpdateView.as_view(), name='category_edit'),
     path('categories/<int:pk>/rename/', category_rename, name='category_rename'),
