@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('category-selects').addEventListener('change',e=>{if(e.target.classList.contains('category-select'))handleSelectChange(e);});
 });
 
-{% can_add_productunit %}
 document.getElementById('unit-add-btn').addEventListener('click',()=>{
   document.getElementById('unit-add-form').style.display='block';
 });
@@ -118,6 +117,6 @@ document.getElementById('save-unit-btn').addEventListener('click',async()=>{
   }
   else{alert('Error adding unit');}
 });
-{% endif %}
+
 </script>
 {% endblock %}
