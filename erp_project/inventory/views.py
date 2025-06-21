@@ -113,7 +113,10 @@ class ProductCategoryListView(AdvancedListMixin, TemplateView):
     default_sort = 'name'
 
     def base_queryset(self):
-        return ProductCategory.objects.filter(company=self.request.user.company)
+        qs = ProductCategory.objects.filter(company=self.request.user.company)
+        if self.request.GET.get('show') != 'all':
+            qs = qs.filter(is_discontinued=False)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -265,12 +268,23 @@ def category_move(request, pk):
     return HttpResponse('OK')
 
 
-@require_permission('delete_productcategory')
-def category_delete(request, pk):
+def _discontinue_category(cat):
+    """Recursively discontinue ``cat`` and cascade to products."""
+    if cat.is_discontinued:
+        return
+    cat.is_discontinued = True
+    cat.save(update_fields=['is_discontinued'])
+    Product.objects.filter(category=cat).update(is_discontinued=True)
+    for child in ProductCategory.objects.filter(parent=cat):
+        _discontinue_category(child)
+
+
+@require_permission('discontinue_productcategory')
+def category_discontinue(request, pk):
     category = get_object_or_404(ProductCategory, pk=pk, company=request.user.company)
     if request.method == 'POST':
-        category.delete()
-        return HttpResponse('', status=204)
+        _discontinue_category(category)
+        return HttpResponse('OK')
     return HttpResponseBadRequest('Invalid request')
 
 
@@ -285,10 +299,12 @@ def category_children(request):
     elif parent_id:  # something invalid
         return JsonResponse([], safe=False)
     cats = ProductCategory.objects.filter(parent=parent, company=request.user.company).order_by('name')
+    if request.GET.get('show') != 'all':
+        cats = cats.filter(is_discontinued=False)
     data = []
     for c in cats:
-        has_children = ProductCategory.objects.filter(parent=c).exists()
-        data.append({'id': c.id, 'name': c.name, 'has_children': has_children})
+        has_children = ProductCategory.objects.filter(parent=c, is_discontinued=False).exists()
+        data.append({'id': c.id, 'name': c.name, 'has_children': has_children, 'is_discontinued': c.is_discontinued})
     return JsonResponse(data, safe=False)
 
 
@@ -308,47 +324,20 @@ def category_quick_add(request):
     return render(request, 'includes/category_option.html', {'category': category}, status=201)
 
 
-@method_decorator(require_permission('view_productunit'), name='dispatch')
-class ProductUnitListView(AdvancedListMixin, TemplateView):
-    template_name = 'product_unit_list.html'
-    model = ProductUnit
-    search_fields = ['code', 'name']
-    default_sort = 'code'
-
-    def base_queryset(self):
-        return ProductUnit.objects.all()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        page = self.get_queryset()
-        context['page_obj'] = page
-        context['search'] = True
-        context['filters'] = []
-        context['sort_options'] = [('code', 'Code'), ('name', 'Name')]
-        context['query_string'] = self.query_string()
-        context['sort_query_string'] = self.sort_query_string()
-        context['can_add_unit'] = user_has_permission(self.request.user, 'add_productunit')
-        return context
+@require_permission('add_productunit')
+def unit_quick_add(request):
+    """Create a unit via AJAX and return an option element."""
+    code = request.POST.get('code', '').strip()
+    name = request.POST.get('name', '').strip()
+    if not code or not name:
+        return HttpResponseBadRequest('All fields required')
+    if ProductUnit.objects.filter(code__iexact=code).exists() or ProductUnit.objects.filter(name__iexact=name).exists():
+        return HttpResponseBadRequest('Unit exists')
+    unit = ProductUnit.objects.create(code=code, name=name)
+    log_action(request.user, 'create_unit', details={'code': code})
+    return render(request, 'includes/unit_option.html', {'unit': unit}, status=201)
 
 
-@method_decorator(require_permission('add_productunit'), name='dispatch')
-class ProductUnitCreateView(View):
-    def get(self, request):
-        context = {
-            'code': '',
-            'name': '',
-        }
-        return render(request, 'product_unit_form.html', context)
-
-    def post(self, request):
-        code = request.POST.get('code', '').strip()
-        name = request.POST.get('name', '').strip()
-        if not code or not name:
-            context = {'error': 'All fields required', 'code': code, 'name': name}
-            return render(request, 'product_unit_form.html', context)
-        ProductUnit.objects.create(code=code, name=name)
-        log_action(request.user, 'create_unit', details={'code': code})
-        return redirect('unit_list')
 
 
 @method_decorator(require_permission('view_product'), name='dispatch')
@@ -359,7 +348,10 @@ class ProductListView(AdvancedListMixin, TemplateView):
     default_sort = 'name'
 
     def base_queryset(self):
-        return Product.objects.filter(company=self.request.user.company)
+        qs = Product.objects.filter(company=self.request.user.company)
+        if self.request.GET.get('show') != 'all':
+            qs = qs.filter(is_discontinued=False)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -378,8 +370,7 @@ class ProductListView(AdvancedListMixin, TemplateView):
 class ProductCreateView(View):
     def get(self, request):
         units = ProductUnit.objects.all()
-        cats = ProductCategory.objects.filter(company=request.user.company)
-        return render(request, 'product_form.html', {'units': units, 'categories': cats})
+        return render(request, 'product_form.html', {'units': units})
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
@@ -388,13 +379,16 @@ class ProductCreateView(View):
         unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
         if not name or not sku or not unit:
             units = ProductUnit.objects.all()
-            cats = ProductCategory.objects.filter(company=request.user.company)
-            return render(request, 'product_form.html', {'error': 'All fields required', 'units': units, 'categories': cats})
+            return render(request, 'product_form.html', {'error': 'All fields required', 'units': units})
         brand = request.POST.get('brand', '').strip()
         cat_id = request.POST.get('category')
         category = None
         if cat_id:
             category = get_object_or_404(ProductCategory, pk=cat_id, company=request.user.company)
+            if ProductCategory.objects.filter(parent=category).exists():
+                units = ProductUnit.objects.all()
+                err = 'Category must be a leaf node'
+                return render(request, 'product_form.html', {'error': err, 'units': units})
         Product.objects.create(
             name=name,
             sku=sku,

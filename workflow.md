@@ -231,7 +231,7 @@ After this workflow:
 | #  | Task                                               | Status            |
 | -- | -------------------------------------------------- | ----------------- |
 | 1  | **Product Category CRUD (API + UI)**               | ✅ Implemented by Agent |
-| 2  | **Product Unit CRUD (API + UI)**                   | ✅ Implemented by Agent |
+| 2  | **Product Unit CRUD (API + UI)**                   | ✅ Implemented by Agent (now inline add in product form) |
 | 3  | **Product CRUD (API + UI)**                        | ✅ Implemented by Agent |
 | 4  | **Warehouse CRUD (API + UI)**                      | ✅ Implemented by Agent |
 | 5  | **Stock Lot CRUD (API + UI)**                      | ✅ Implemented by Agent |
@@ -247,6 +247,7 @@ After this workflow:
 | 15 | **Hierarchical Category Selection in Forms**       | ✅ Implemented by Agent |
 
 The category form was updated to use a dropdown-driven flow for adding root categories and now enforces unique category names per company.
+Categories now support a soft "discontinue" action that hides them from selection and cascades to products.
 
 ---
 

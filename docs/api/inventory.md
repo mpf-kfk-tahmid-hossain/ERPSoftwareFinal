@@ -53,11 +53,11 @@
 - **Payload:** `parent` (empty for root)
 - **Response:** `200 OK` or `400` if invalid (circular)
 
-### Delete Category
-- **URL:** `/inventory/categories/<id>/delete/`
+### Discontinue Category
+- **URL:** `/inventory/categories/<id>/discontinue/`
 - **Method:** `POST`
-- **Auth:** `delete_productcategory`
-- **Response:** `204 No Content`
+- **Auth:** `discontinue_productcategory`
+- **Response:** `200 OK`
 
 ### Category Children
 - **URL:** `/inventory/categories/children/`
@@ -66,16 +66,12 @@
 - **Params:** `parent` (optional category id), `level` (next level number)
 - **Response:** HTML snippet with a select for child categories
 
-## List Units
-- **URL:** `/inventory/units/`
-- **Method:** `GET`
-- **Auth:** `view_productunit`
-
-## Add Unit
-- **URL:** `/inventory/units/add/`
+### Quick Add Unit
+- **URL:** `/inventory/units/quick-add/`
 - **Method:** `POST`
 - **Auth:** `add_productunit`
 - **Payload:** `code`, `name`
+- **Response:** HTML `<option>` for the new unit (201)
 
 ## List Products
 - **URL:** `/inventory/products/`

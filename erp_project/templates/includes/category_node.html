@@ -2,8 +2,9 @@
   <div class="d-flex align-items-center">
     <button class="btn btn-sm btn-light me-1 expand-btn{% if not cat.children_list %} d-none{% endif %}" data-id="{{ cat.id }}">+</button>
     <span class="cat-name flex-grow-1">{{ cat.name }}</span>
-    <button class="btn btn-sm btn-link rename-btn" data-id="{{ cat.id }}">Rename</button>
-    <button class="btn btn-sm btn-link text-danger delete-btn" data-id="{{ cat.id }}">Delete</button>
+    {% if cat.is_discontinued %}<span class="badge bg-danger">❌ Discontinued</span>{% endif %}
+    <button class="btn btn-sm btn-link rename-btn{% if cat.is_discontinued %} d-none{% endif %}" data-id="{{ cat.id }}">Rename</button>
+    <button class="btn btn-sm btn-link text-danger discontinue-btn{% if cat.is_discontinued %} d-none{% endif %}" data-id="{{ cat.id }}">Discontinue</button>
   </div>
   <ul class="ms-4 children-container"></ul>
 </li>

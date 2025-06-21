@@ -39,6 +39,9 @@ function createNode(cat){
   name.className = 'cat-name flex-grow-1';
   name.textContent = cat.name;
   div.appendChild(name);
+  if(cat.is_discontinued){
+    name.insertAdjacentHTML('afterend',' <span class="badge bg-danger">\u274C Discontinued</span>');
+  }
 
   const rename = document.createElement('button');
   rename.className = 'btn btn-sm btn-link rename-btn';
@@ -54,15 +57,19 @@ function createNode(cat){
   });
   div.appendChild(rename);
 
-  const del = document.createElement('button');
-  del.className = 'btn btn-sm btn-link text-danger delete-btn';
-  del.textContent = 'Delete';
-  del.addEventListener('click', async () => {
-    if(!confirm('Delete?')) return;
-    const resp = await fetch(`/inventory/categories/${cat.id}/delete/`,{method:'POST',headers:{'X-CSRFToken':csrftoken}});
-    if(resp.status===204){ li.remove(); }
+  const disc = document.createElement('button');
+  disc.className = 'btn btn-sm btn-link text-danger discontinue-btn';
+  disc.textContent = 'Discontinue';
+  disc.addEventListener('click', async () => {
+    if(!confirm('Discontinue category and its children?')) return;
+    const resp = await fetch(`/inventory/categories/${cat.id}/discontinue/`,{method:'POST',headers:{'X-CSRFToken':csrftoken}});
+    if(resp.ok){ li.querySelectorAll('button').forEach(b=>b.remove()); name.insertAdjacentHTML('afterend',' <span class="badge bg-danger">\u274C Discontinued</span>'); }
   });
-  div.appendChild(del);
+  div.appendChild(disc);
+  if(cat.is_discontinued){
+    rename.classList.add('d-none');
+    disc.classList.add('d-none');
+  }
 
   li.appendChild(div);
   const ul = document.createElement('ul');

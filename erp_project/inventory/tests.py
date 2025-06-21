@@ -113,7 +113,7 @@ class CategoryManageTests(TestCase):
         self.company = Company.objects.create(name='TreeCo', code='TC', address='')
         self.user = User.objects.create_user(username='tree', password='pass', company=self.company)
         role = Role.objects.get(name='Admin')
-        perms = ['add_productcategory', 'view_productcategory', 'change_productcategory', 'delete_productcategory']
+        perms = ['add_productcategory', 'view_productcategory', 'change_productcategory', 'discontinue_productcategory']
         for codename in perms:
             perm, _ = Permission.objects.get_or_create(codename=codename)
             role.permissions.add(perm)
@@ -131,9 +131,10 @@ class CategoryManageTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         child.refresh_from_db()
         self.assertEqual(child.name, 'New')
-        resp = self.client.post(reverse('category_delete', args=[child.id]))
-        self.assertEqual(resp.status_code, 204)
-        self.assertFalse(ProductCategory.objects.filter(pk=child.id).exists())
+        resp = self.client.post(reverse('category_discontinue', args=[child.id]))
+        self.assertEqual(resp.status_code, 200)
+        child.refresh_from_db()
+        self.assertTrue(child.is_discontinued)
 
     def test_rename_duplicate_rejected(self):
         cat1 = ProductCategory.objects.create(name='A', company=self.company)
@@ -156,7 +157,7 @@ class ProductFlowTests(TestCase):
         self.user = User.objects.create_user(username='prod', password='pass', company=self.company)
         role = Role.objects.get(name='Admin')
         perms = [
-            'add_productunit', 'view_productunit',
+            'add_productunit',
             'add_product', 'view_product',
             'add_stocklot', 'view_stocklot',
             'add_stockmovement', 'view_stockmovement',
@@ -170,9 +171,9 @@ class ProductFlowTests(TestCase):
         self.client.login(username='prod', password='pass')
 
     def test_full_product_flow(self):
-        # create unit
-        self.client.post(reverse('unit_add'), {'code': 'PCS', 'name': 'Pieces'})
-        self.assertTrue(ProductUnit.objects.filter(code='PCS').exists())
+        # create unit via quick add
+        resp_u = self.client.post(reverse('unit_quick_add'), {'code': 'PCS', 'name': 'Pieces'})
+        self.assertEqual(resp_u.status_code, 201)
         unit = ProductUnit.objects.get(code='PCS')
         # create category and product
         cat = ProductCategory.objects.create(name='Cat', company=self.company)
@@ -217,7 +218,7 @@ class InventoryEndToEndTests(TestCase):
         role = Role.objects.get(name='Admin')
         perms = [
             'add_productcategory', 'view_productcategory',
-            'add_productunit', 'view_productunit',
+            'add_productunit',
             'add_product', 'view_product',
             'add_warehouse', 'view_warehouse',
             'add_stocklot', 'view_stocklot',
@@ -236,8 +237,8 @@ class InventoryEndToEndTests(TestCase):
         self.client.post(reverse('category_add'), {'name': 'Electronics'})
         category = ProductCategory.objects.get(name='Electronics', company=self.company)
 
-        # create unit
-        self.client.post(reverse('unit_add'), {'code': 'PCS', 'name': 'Pieces'})
+        # create unit via quick add
+        self.client.post(reverse('unit_quick_add'), {'code': 'PCS', 'name': 'Pieces'})
         unit = ProductUnit.objects.get(code='PCS')
 
         # create product
