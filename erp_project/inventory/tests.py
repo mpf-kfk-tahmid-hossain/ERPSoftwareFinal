@@ -69,6 +69,13 @@ class CategoryViewTests(TestCase):
         resp = self.client.get(reverse('category_edit', args=[cat.id]))
         self.assertContains(resp, 'value="Old"')
 
+    def test_category_children_endpoint(self):
+        parent = ProductCategory.objects.create(name='Root', company=self.company)
+        ProductCategory.objects.create(name='Child', parent=parent, company=self.company)
+        resp = self.client.get(reverse('category_children'), {'parent': parent.id, 'level': 2})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Child')
+
 
 class CategoryTreeTests(TestCase):
     def setUp(self):

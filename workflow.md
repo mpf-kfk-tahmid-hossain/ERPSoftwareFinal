@@ -244,6 +244,7 @@ After this workflow:
 | 12 | **API Documentation for all endpoints**            | ✅ Implemented by Agent |
 | 13 | **Integration/UI Tests for full workflow**         | ✅ Implemented by Agent |
 | 14 | **Category Tree management UI**                    | ✅ Implemented by Agent |
+| 15 | **Hierarchical Category Selection in Forms**       | ✅ Implemented by Agent |
 
 ---
 

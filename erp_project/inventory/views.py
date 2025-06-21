@@ -131,9 +131,11 @@ class ProductCategoryListView(AdvancedListMixin, TemplateView):
 @method_decorator(require_permission('add_productcategory'), name='dispatch')
 class ProductCategoryCreateView(View):
     def get(self, request):
-        cats = ProductCategory.objects.filter(company=request.user.company)
+        roots = ProductCategory.objects.filter(
+            company=request.user.company, parent__isnull=True
+        ).order_by('name')
         context = {
-            'categories': cats,
+            'root_categories': roots,
             'category': None,
             'name': '',
             'parent': '',
@@ -147,10 +149,12 @@ class ProductCategoryCreateView(View):
         if parent_id:
             parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
         if not name:
-            cats = ProductCategory.objects.filter(company=request.user.company)
+            roots = ProductCategory.objects.filter(
+                company=request.user.company, parent__isnull=True
+            ).order_by('name')
             context = {
                 'error': 'Name required',
-                'categories': cats,
+                'root_categories': roots,
                 'name': name,
                 'parent': parent_id,
                 'category': None,
@@ -169,10 +173,12 @@ class ProductCategoryUpdateView(View):
 
     def get(self, request, pk):
         category = self.get_object(pk, request.user)
-        cats = ProductCategory.objects.filter(company=request.user.company).exclude(pk=category.pk)
+        roots = ProductCategory.objects.filter(
+            company=request.user.company, parent__isnull=True
+        ).exclude(pk=category.pk).order_by('name')
         context = {
             'category': category,
-            'categories': cats,
+            'root_categories': roots,
             'name': category.name,
             'parent': category.parent_id,
         }
@@ -186,11 +192,13 @@ class ProductCategoryUpdateView(View):
         if parent_id:
             parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
         if not name:
-            cats = ProductCategory.objects.filter(company=request.user.company).exclude(pk=category.pk)
+            roots = ProductCategory.objects.filter(
+                company=request.user.company, parent__isnull=True
+            ).exclude(pk=category.pk).order_by('name')
             context = {
                 'error': 'Name required',
                 'category': category,
-                'categories': cats,
+                'root_categories': roots,
                 'name': name,
                 'parent': parent_id,
             }
@@ -268,6 +276,18 @@ def category_delete(request, pk):
         category.delete()
         return HttpResponse('', status=204)
     return HttpResponseBadRequest('Invalid request')
+
+
+@require_permission('view_productcategory')
+def category_children(request):
+    """Return child categories for HTMX cascading selects."""
+    parent_id = request.GET.get('parent')
+    level = int(request.GET.get('level', 1))
+    parent = None
+    if parent_id:
+        parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
+    cats = ProductCategory.objects.filter(parent=parent, company=request.user.company).order_by('name')
+    return render(request, 'includes/category_select.html', {'categories': cats, 'level': level})
 
 
 @method_decorator(require_permission('view_productunit'), name='dispatch')
