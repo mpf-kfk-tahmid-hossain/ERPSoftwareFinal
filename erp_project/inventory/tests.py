@@ -62,6 +62,11 @@ class CategoryViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(ProductCategory.objects.filter(name='Cat1', company=self.company).exists())
 
+    def test_create_category_ignores_new_parent_marker(self):
+        resp = self.client.post(reverse('category_add'), {'name': 'CatNew', 'parent': '__new__'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(ProductCategory.objects.filter(name='CatNew', parent__isnull=True, company=self.company).exists())
+
     def test_duplicate_category_rejected(self):
         ProductCategory.objects.create(name='Unique', company=self.company)
         resp = self.client.post(reverse('category_add'), {'name': 'Unique'})
