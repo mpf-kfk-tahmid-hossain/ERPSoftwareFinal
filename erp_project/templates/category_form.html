@@ -6,75 +6,171 @@
   {% csrf_token %}
   <input type="hidden" name="parent" id="id_parent_hidden" value="{{ parent }}">
   <div id="category-selects">
-    <div class="mb-3" id="level-1">
-      <label class="form-label">Level 1 Category</label>
-      <div class="input-group">
-        <select name="parent" class="form-select category-select" data-level="1"
-                hx-get="{% url 'category_children' %}?level=2" hx-target="#level-2" hx-trigger="change">
-          <option value="">-- None --</option>
-          {% for c in root_categories %}
-          <option value="{{ c.id }}" {% if parent|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
-          {% endfor %}
-          <option value="__new__">Create New Level 1 Category</option>
-        </select>
-        
-      </div>
-      <div class="add-container"></div>
-    </div>
-    <div id="level-2"></div>
+    <!-- Level 1 will be loaded by JS on page load -->
   </div>
-  <div class="mb-3" id="name-container" {% if not category %}style="display:none"{% endif %}>
+  <div class="mb-3" id="name-container" style="display:none">
     <label for="id_name" class="form-label">Name</label>
     <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
     {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
   </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>
+
 <script>
-function updateParent(){
-  let val='';
-  document.querySelectorAll('.category-select').forEach(s=>{if(s.value){val=s.value;}});
-  document.getElementById('id_parent_hidden').value=val;
-}
-function toggleName(){
-  const val=document.querySelector('#level-1 select').value;
-  const cont=document.getElementById('name-container');
-  cont.style.display=(val==='__new__')?'block':'none';
-}
-updateParent();
-toggleName();
+const CATEGORY_CHILDREN_URL = "{% url 'category_children' %}";
 
-document.getElementById('category-selects').addEventListener('change',function(e){
-  if(e.target.classList.contains('category-select')){
-    const level=parseInt(e.target.dataset.level);
-    document.querySelectorAll('.category-select').forEach(sel=>{
-      if(parseInt(sel.dataset.level)>level){sel.closest('.mb-3').remove();}
+function updateParent() {
+  let val = '';
+  document.querySelectorAll('.category-select').forEach(s => {
+    if (s.value && s.value !== '__new__') val = s.value;
+  });
+  document.getElementById('id_parent_hidden').value = val;
+  console.log('[updateParent] Parent set to:', val);
+}
+
+function toggleName(latestValue) {
+  const cont = document.getElementById('name-container');
+  // Show if "Create New" selected at the last select or if no selects present
+  cont.style.display = (latestValue === '__new__' || !latestValue) ? 'block' : 'none';
+  console.log('[toggleName] Show name:', cont.style.display === 'block');
+}
+
+// Renders a <select> for a given level, with options
+function renderSelect(level, options, selected) {
+  const div = document.createElement('div');
+  div.className = 'mb-3';
+  div.id = `level-${level}`;
+  const label = document.createElement('label');
+  label.className = 'form-label';
+  label.textContent = `Level ${level} Category`;
+  const group = document.createElement('div');
+  group.className = 'input-group';
+  const select = document.createElement('select');
+  select.name = `level_${level}_id`;
+  select.className = 'form-select category-select';
+  select.dataset.level = level;
+
+  // Add default -- None --
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '';
+  noneOpt.textContent = '-- None --';
+  select.appendChild(noneOpt);
+
+  // Add options from backend
+  options.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.name;
+    if (selected && selected == opt.id) o.selected = true;
+    select.appendChild(o);
+  });
+
+  // Add create new option
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = `Create New Level ${level} Category`;
+  select.appendChild(newOpt);
+
+  group.appendChild(select);
+  div.appendChild(label);
+  div.appendChild(group);
+
+  return div;
+}
+
+// Fetch category options for a given level & parent
+async function loadCategoryLevel(level, parentId, selected = null) {
+  let url = CATEGORY_CHILDREN_URL + `?level=${level}`;
+  if (parentId) url += `&parent_id=${parentId}`;
+  try {
+    const resp = await fetch(url, { headers: {'X-Requested-With': 'XMLHttpRequest'} });
+    if (resp.ok) {
+      const data = await resp.json(); // expects JSON: [{id: 5, name: "Gold"}, ...]
+      console.log(`[AJAX] Loaded Level ${level} Options for Parent ${parentId}:`, data);
+
+      // Remove all levels > current
+      document.querySelectorAll('.category-select').forEach(sel => {
+        if (parseInt(sel.dataset.level) > level) {
+          sel.closest('.mb-3').remove();
+        }
+      });
+
+      // Remove current level select if exists
+      const oldDiv = document.getElementById(`level-${level}`);
+      if (oldDiv) oldDiv.remove();
+
+      // If there are any options, render select
+      if (data.length > 0) {
+        const selectDiv = renderSelect(level, data, selected);
+        document.getElementById('category-selects').appendChild(selectDiv);
+        logSelect(level, data);
+
+        // Attach change event (for dynamically added selects)
+        selectDiv.querySelector('select').addEventListener('change', onSelectChange);
+      } else {
+        logSelect(level, []);
+      }
+      updateParent();
+
+      // If no options, show name input
+      toggleName();
+    } else {
+      console.error(`[AJAX] Failed to load categories for level ${level}`, resp.status);
+    }
+  } catch (err) {
+    console.error(`[AJAX] Error loading categories:`, err);
+  }
+}
+
+function logSelect(level, options) {
+  console.log(`--- Level ${level} Category Options ---`);
+  options.forEach(opt => {
+    console.log(`Option: {id: ${opt.id}, name: "${opt.name}"}`);
+  });
+  if(options.length === 0) console.log('(No categories at this level)');
+}
+
+function onSelectChange(e) {
+  const select = e.target;
+  const level = parseInt(select.dataset.level);
+  const selectedVal = select.value;
+  console.log(`[CHANGE] Level ${level} changed to:`, selectedVal);
+
+  updateParent();
+
+  // If "Create New", show name input and stop
+  if (selectedVal === '__new__') {
+    toggleName(selectedVal);
+    // Remove all deeper selects if any
+    document.querySelectorAll('.category-select').forEach(sel => {
+      if (parseInt(sel.dataset.level) > level) {
+        sel.closest('.mb-3').remove();
+      }
     });
-    updateParent();
-    if(level===1){toggleName();}
+    return;
   }
-});
+  // If empty (None), remove deeper selects and show name input
+  if (selectedVal === '') {
+    toggleName('');
+    document.querySelectorAll('.category-select').forEach(sel => {
+      if (parseInt(sel.dataset.level) > level) {
+        sel.closest('.mb-3').remove();
+      }
+    });
+    return;
+  }
 
-const quickAddUrl = "{% url 'category_quick_add' %}";
-document.getElementById('category-selects').addEventListener('click',function(e){
-  if(e.target.classList.contains('add-btn')){
-    const level=e.target.dataset.level;
-    const wrapper=document.getElementById('level-'+level);
-    const select=wrapper.querySelector('select');
-    const parentVal=select.value;
-    wrapper.querySelector('.add-container').innerHTML=`<form class="add-form mt-2 d-flex" data-level="${level}" hx-post="${quickAddUrl}" hx-target="#level-${level} select" hx-swap="beforeend"><input type="hidden" name="parent" value="${parentVal}"><input type="text" name="name" class="form-control me-2" required><button class="btn btn-primary" type="submit">Add</button></form>`;
-  }
-});
+  toggleName(selectedVal);
+  // Fetch next level
+  loadCategoryLevel(level + 1, selectedVal);
+}
 
-document.body.addEventListener('htmx:afterRequest',function(e){
-  if(e.target.classList.contains('add-form')){
-    const level=e.target.dataset.level;
-    const select=document.querySelector(`#level-${level} select`);
-    const opt=select.querySelector('option[selected]');
-    if(opt){select.value=opt.value;}
-    select.dispatchEvent(new Event('change'));
-    e.target.remove();
-  }
+// --- INITIALIZE ---
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Load Level 1 categories at page load (parent=None)
+  loadCategoryLevel(1, '');
+  document.getElementById('name-container').style.display = 'block'; // If needed for "Add top-level category"
 });
 </script>
 {% endblock %}

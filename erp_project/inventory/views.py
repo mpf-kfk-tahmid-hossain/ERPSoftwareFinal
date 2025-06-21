@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 
 from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
@@ -306,16 +306,17 @@ def category_delete(request, pk):
 
 @require_permission('view_productcategory')
 def category_children(request):
-    """Return child categories for HTMX cascading selects."""
-    parent_id = request.GET.get('parent')
+    """Return child categories as JSON for AJAX cascading selects."""
+    parent_id = request.GET.get('parent_id') or request.GET.get('parent')  # accept both keys
     level = int(request.GET.get('level', 1))
     parent = None
-    if parent_id and parent_id.isdigit():
+    if parent_id and str(parent_id).isdigit():
         parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
-    elif parent_id:
-        return HttpResponse('')
+    elif parent_id:  # something invalid
+        return JsonResponse([], safe=False)
     cats = ProductCategory.objects.filter(parent=parent, company=request.user.company).order_by('name')
-    return render(request, 'includes/category_select.html', {'categories': cats, 'level': level})
+    data = [{'id': c.id, 'name': c.name} for c in cats]
+    return JsonResponse(data, safe=False)
 
 
 @require_permission('add_productcategory')
