@@ -87,6 +87,16 @@ class CategoryViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Child')
 
+    def test_level_two_dropdown_rendered(self):
+        """Selecting a level 1 category returns a level 2 dropdown snippet."""
+        parent = ProductCategory.objects.create(name='Root', company=self.company)
+        ProductCategory.objects.create(name='ChildA', parent=parent, company=self.company)
+        resp = self.client.get(reverse('category_children'), {'parent': parent.id, 'level': 2})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Level 2 Category')
+        self.assertContains(resp, reverse('category_children') + '?level=3')
+        self.assertContains(resp, 'ChildA')
+
     def test_quick_add(self):
         resp = self.client.post(reverse('category_quick_add'), {'name': 'Quick'})
         self.assertEqual(resp.status_code, 201)
