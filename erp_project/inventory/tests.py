@@ -76,6 +76,11 @@ class CategoryViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Child')
 
+    def test_quick_add(self):
+        resp = self.client.post(reverse('category_quick_add'), {'name': 'Quick'})
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(ProductCategory.objects.filter(name='Quick', company=self.company).exists())
+
 
 class CategoryTreeTests(TestCase):
     def setUp(self):

@@ -1,11 +1,15 @@
 <div class="mb-3" id="level-{{ level }}">
   <label class="form-label">Level {{ level }} Category</label>
-  <select name="parent" class="form-select category-select" data-level="{{ level }}"
-          hx-get="{% url 'category_children' %}?level={{ level|add:'1' }}" hx-target="#level-{{ level|add:'1' }}" hx-trigger="change">
-    <option value="">-- None --</option>
-    {% for c in categories %}
-    <option value="{{ c.id }}">{{ c.name }}</option>
-    {% endfor %}
-  </select>
+  <div class="input-group">
+    <select name="parent" class="form-select category-select" data-level="{{ level }}"
+            hx-get="{% url 'category_children' %}?level={{ level|add:'1' }}" hx-target="#level-{{ level|add:'1' }}" hx-trigger="change">
+      <option value="">-- None --</option>
+      {% for c in categories %}
+      <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-outline-secondary add-btn" data-level="{{ level }}">Add</button>
+  </div>
+  <div class="add-container"></div>
 </div>
 <div id="level-{{ level|add:'1' }}"></div>
