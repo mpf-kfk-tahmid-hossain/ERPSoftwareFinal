@@ -27,9 +27,6 @@
         {% if user.is_authenticated and user.company and nav_perms.view_productcategory %}
         <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">Categories</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_productunit %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'unit_list' %}">Units</a></li>
-        {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.view_product %}
         <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}">Products</a></li>
         {% endif %}

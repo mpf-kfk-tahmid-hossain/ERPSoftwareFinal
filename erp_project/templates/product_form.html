@@ -14,22 +14,35 @@
   </div>
   <div class="mb-3">
     <label class="form-label" for="id_unit">Unit</label>
-    <select name="unit" id="id_unit" class="form-select" required>
-      <option value="">----</option>
-      {% for u in units %}
-      <option value="{{ u.id }}">{{ u.name }}</option>
-      {% endfor %}
-    </select>
+    <div class="input-group">
+      <select name="unit" id="id_unit" class="form-select" required>
+        <option value="">----</option>
+        {% for u in units %}
+        <option value="{{ u.id }}">{{ u.name }}</option>
+        {% endfor %}
+      </select>
+      {% if perms.add_productunit %}
+      <button class="btn btn-outline-secondary" type="button" id="unit-add-btn">Add New</button>
+      {% endif %}
+    </div>
+    {% if perms.add_productunit %}
+    <div id="unit-add-form" class="mt-2" style="display:none;">
+      <div class="row g-2">
+        <div class="col">
+          <input type="text" class="form-control" placeholder="Code" id="new_unit_code">
+        </div>
+        <div class="col">
+          <input type="text" class="form-control" placeholder="Name" id="new_unit_name">
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-primary" id="save-unit-btn">Save</button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
-  <div class="mb-3">
-    <label class="form-label" for="id_category">Category</label>
-    <select name="category" id="id_category" class="form-select">
-      <option value="">----</option>
-      {% for c in categories %}
-      <option value="{{ c.id }}">{{ c.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
+  <input type="hidden" name="category" id="id_category">
+  <div id="category-selects" class="mb-3"></div>
   <div class="mb-3">
     <label for="id_brand" class="form-label">Brand</label>
     <input type="text" name="brand" id="id_brand" class="form-control">
@@ -45,4 +58,66 @@
   {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
   <button type="submit" class="btn btn-success">Save</button>
 </form>
+<script>
+function getCookie(name){const v=`; ${document.cookie}`.split(`; ${name}=`);return v.length===2?v.pop().split(';').shift():'';}
+const CATEGORY_CHILDREN_URL = "{% url 'category_children' %}";
+function renderSelect(level, options){
+  const div = document.createElement('div');
+  div.className='mb-2';
+  const label = document.createElement('label');
+  label.className='form-label';
+  label.textContent=`Level ${level}`;
+  const select = document.createElement('select');
+  select.className='form-select category-select';
+  select.dataset.level=level;
+  select.innerHTML='<option value="">-- None --</option>';
+  options.forEach(o=>{select.innerHTML+=`<option value="${o.id}">${o.name}</option>`});
+  div.appendChild(label);div.appendChild(select);
+  return div;
+}
+async function loadLevel(level,parent){
+  let url=CATEGORY_CHILDREN_URL+`?level=${level}`;if(parent)url+=`&parent_id=${parent}`;
+  const r=await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}});
+  if(!r.ok)return[];return await r.json();
+}
+async function handleSelectChange(e){
+  const sel=e.target;const level=parseInt(sel.dataset.level);const val=sel.value;
+  document.getElementById('id_category').value='';
+  document.querySelectorAll('.category-select').forEach(s=>{if(parseInt(s.dataset.level)>level)s.parentNode.remove();});
+  if(!val)return;
+  const data=await loadLevel(level+1,val);
+  if(data.length){
+    document.getElementById('category-selects').appendChild(renderSelect(level+1,data));
+  }else{
+    document.getElementById('id_category').value=val;
+  }
+}
+document.addEventListener('DOMContentLoaded',async()=>{
+  const data=await loadLevel(1,'');
+  if(data.length)document.getElementById('category-selects').appendChild(renderSelect(1,data));
+  document.getElementById('category-selects').addEventListener('change',e=>{if(e.target.classList.contains('category-select'))handleSelectChange(e);});
+});
+
+{% if perms.add_productunit %}
+document.getElementById('unit-add-btn').addEventListener('click',()=>{
+  document.getElementById('unit-add-form').style.display='block';
+});
+document.getElementById('save-unit-btn').addEventListener('click',async()=>{
+  const code=document.getElementById('new_unit_code').value.trim();
+  const name=document.getElementById('new_unit_name').value.trim();
+  if(!code||!name){alert('All fields required');return;}
+  const form=new URLSearchParams({code:code,name:name});
+  const resp=await fetch("{% url 'unit_quick_add' %}",{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:form});
+  if(resp.ok){
+    const html=await resp.text();
+    const parser=new DOMParser();
+    const opt=parser.parseFromString(html,'text/html').querySelector('option');
+    document.getElementById('id_unit').appendChild(opt);
+    document.getElementById('id_unit').value=opt.value;
+    document.getElementById('unit-add-form').style.display='none';
+  }
+  else{alert('Error adding unit');}
+});
+{% endif %}
+</script>
 {% endblock %}

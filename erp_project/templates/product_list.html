@@ -17,7 +17,7 @@
   <tbody>
     {% for p in page_obj %}
     <tr>
-      <td>{{ p.name }}</td><td>{{ p.sku }}</td><td>{{ p.unit.name }}</td><td>{{ p.brand }}</td>
+      <td>{{ p.name }} {% if p.is_discontinued %}<span class="badge bg-danger">❌ Discontinued</span>{% endif %}</td><td>{{ p.sku }}</td><td>{{ p.unit.name }}</td><td>{{ p.brand }}</td>
     </tr>
     {% endfor %}
   </tbody>

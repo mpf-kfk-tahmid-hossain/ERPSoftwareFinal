@@ -21,6 +21,7 @@ class ProductCategory(models.Model):
         'self', on_delete=models.CASCADE, null=True, blank=True, related_name='children'
     )
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    is_discontinued = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name
@@ -69,6 +70,7 @@ class Product(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     description = models.TextField(blank=True)
+    is_discontinued = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name

@@ -11,7 +11,6 @@ def nav_permissions(request):
         'view_role',
         'view_warehouse',
         'view_productcategory',
-        'view_productunit',
         'view_product',
         'view_stocklot',
         'view_stockmovement',
