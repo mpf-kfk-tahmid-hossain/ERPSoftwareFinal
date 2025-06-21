@@ -85,17 +85,17 @@ class CategoryViewTests(TestCase):
         ProductCategory.objects.create(name='Child', parent=parent, company=self.company)
         resp = self.client.get(reverse('category_children'), {'parent': parent.id, 'level': 2})
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'Child')
+        data = resp.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['name'], 'Child')
 
     def test_level_two_dropdown_rendered(self):
-        """Selecting a level 1 category returns a level 2 dropdown snippet."""
         parent = ProductCategory.objects.create(name='Root', company=self.company)
         ProductCategory.objects.create(name='ChildA', parent=parent, company=self.company)
         resp = self.client.get(reverse('category_children'), {'parent': parent.id, 'level': 2})
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'Level 2 Category')
-        self.assertContains(resp, reverse('category_children') + '?level=3')
-        self.assertContains(resp, 'ChildA')
+        data = resp.json()
+        self.assertEqual(data[0]['name'], 'ChildA')
 
     def test_quick_add(self):
         resp = self.client.post(reverse('category_quick_add'), {'name': 'Quick'})
@@ -108,24 +108,17 @@ class CategoryViewTests(TestCase):
         self.assertEqual(resp.status_code, 400)
 
 
-class CategoryTreeTests(TestCase):
+class CategoryManageTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name='TreeCo', code='TC', address='')
         self.user = User.objects.create_user(username='tree', password='pass', company=self.company)
         role = Role.objects.get(name='Admin')
-        perms = [
-            'add_productcategory', 'view_productcategory', 'change_productcategory', 'delete_productcategory'
-        ]
+        perms = ['add_productcategory', 'view_productcategory', 'change_productcategory', 'delete_productcategory']
         for codename in perms:
             perm, _ = Permission.objects.get_or_create(codename=codename)
             role.permissions.add(perm)
         UserRole.objects.create(user=self.user, role=role, company=self.company)
         self.client.login(username='tree', password='pass')
-
-    def test_tree_view(self):
-        ProductCategory.objects.create(name='Root', company=self.company)
-        resp = self.client.get(reverse('category_tree'))
-        self.assertContains(resp, 'Category Tree')
 
     def test_move_and_rename_delete(self):
         root = ProductCategory.objects.create(name='Root', company=self.company)
@@ -153,6 +146,8 @@ class CategoryTreeTests(TestCase):
         child = ProductCategory.objects.create(name='Child', parent=root, company=self.company)
         resp = self.client.post(reverse('category_move', args=[root.id]), {'parent': child.id})
         self.assertEqual(resp.status_code, 400)
+
+
 
 
 class ProductFlowTests(TestCase):
@@ -310,4 +305,16 @@ class TemplateValueSanityTests(TestCase):
             content = tpl.read_text()
             matches = pattern.findall(content)
             self.assertFalse(matches, f"Unexpected default filter in {tpl}")
+
+
+class NoHTMXUsageTests(TestCase):
+    """Ensure templates do not contain hx-get or hx-post attributes."""
+
+    def test_templates_do_not_use_htmx_get_post(self):
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent / 'templates'
+        for tpl in base.rglob('*.html'):
+            content = tpl.read_text()
+            self.assertNotIn('hx-get', content, f"hx-get found in {tpl}")
+            self.assertNotIn('hx-post', content, f"hx-post found in {tpl}")
 

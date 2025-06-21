@@ -1,28 +1,15 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Categories{% endblock %}
 {% block content %}
 <h2>Product Categories</h2>
 {% if can_add_category %}
 <a href="{% url 'category_add' %}" class="btn btn-success mb-2">Add Category</a>
 {% endif %}
-{% include 'includes/filter_form.html' %}
-<div id="list-container">
-<table class="table">
-  <thead>
-    <tr>
-      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
-      <th>Parent</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for cat in page_obj %}
-    <tr>
-      <td><a href="{% url 'category_edit' cat.id %}">{{ cat.name }}</a></td>
-      <td>{{ cat.parent }}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% include 'includes/pagination.html' %}
-</div>
+<button id="depth-btn" class="btn btn-secondary mb-2 ms-2">Load Depth</button>
+<ul id="category-root" class="list-unstyled"></ul>
+<script src="{% static 'js/category_tree.js' %}"></script>
+<script>
+const CATEGORY_CHILDREN_URL = "{% url 'category_children' %}";
+</script>
 {% endblock %}
