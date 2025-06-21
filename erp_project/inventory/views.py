@@ -146,7 +146,7 @@ class ProductCategoryCreateView(View):
         name = request.POST.get('name', '').strip()
         parent_id = request.POST.get('parent')
         parent = None
-        if parent_id:
+        if parent_id and parent_id.isdigit():
             parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
         if not name:
             roots = ProductCategory.objects.filter(
@@ -201,7 +201,7 @@ class ProductCategoryUpdateView(View):
         name = request.POST.get('name', '').strip()
         parent_id = request.POST.get('parent')
         parent = None
-        if parent_id:
+        if parent_id and parent_id.isdigit():
             parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
         if not name:
             roots = ProductCategory.objects.filter(
@@ -328,7 +328,7 @@ def category_quick_add(request):
         return HttpResponseBadRequest('Category with this name already exists')
     parent_id = request.POST.get('parent')
     parent = None
-    if parent_id:
+    if parent_id and parent_id.isdigit():
         parent = get_object_or_404(ProductCategory, pk=parent_id, company=request.user.company)
     category = ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
     return render(request, 'includes/category_option.html', {'category': category}, status=201)
