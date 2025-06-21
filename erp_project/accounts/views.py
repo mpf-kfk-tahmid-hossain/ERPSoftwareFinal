@@ -24,6 +24,21 @@ class CompanyCreateView(LoginRequiredMixin, SuperuserRequiredMixin, CreateView):
     template_name = 'company_form.html'
     success_url = reverse_lazy('company_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get('form')
+        context['name'] = (form['name'].value() or '') if form else ''
+        context['code'] = (form['code'].value() or '') if form else ''
+        context['address'] = (form['address'].value() or '') if form else ''
+        return context
+
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        context['name'] = form.data.get('name', '')
+        context['code'] = form.data.get('code', '')
+        context['address'] = form.data.get('address', '')
+        return self.render_to_response(context)
+
 @method_decorator(require_permission('view_company'), name='dispatch')
 class CompanyListView(LoginRequiredMixin, SuperuserRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'company_list.html'
@@ -84,6 +99,22 @@ class CompanyUpdateView(LoginRequiredMixin, SuperuserRequiredMixin, UpdateView):
     template_name = 'company_form.html'
     success_url = reverse_lazy('company_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.get_object()
+        context['company'] = company
+        context['name'] = company.name
+        context['code'] = company.code
+        context['address'] = company.address
+        return context
+
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        context['name'] = form.data.get('name', '')
+        context['code'] = form.data.get('code', '')
+        context['address'] = form.data.get('address', '')
+        return self.render_to_response(context)
+
 @method_decorator(require_permission('view_user'), name='dispatch')
 class UserListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'user_list.html'
@@ -135,16 +166,17 @@ class CompanyUserCreateView(View):
         roles = Role.objects.filter(company=company)
         can_add_role = user_has_permission(request.user, 'add_role')
         permissions = Permission.objects.all() if can_add_role else Permission.objects.none()
-        return render(
-            request,
-            "user_form.html",
-            {
-                "form": form,
-                "roles": roles,
-                "permissions": permissions,
-                "can_add_role": can_add_role,
-            },
-        )
+        context = {
+            'form': form,
+            'roles': roles,
+            'permissions': permissions,
+            'can_add_role': can_add_role,
+            'username': '',
+            'email': '',
+            'first_name': '',
+            'last_name': '',
+        }
+        return render(request, "user_form.html", context)
 
     def post(self, request, company_id):
         company = get_object_or_404(Company, pk=company_id)
@@ -172,16 +204,17 @@ class CompanyUserCreateView(View):
                     role = Role.objects.get(name='Admin')
             UserRole.objects.create(user=user, role=role, company=company)
             return redirect("user_list", company_id=company.id)
-        return render(
-            request,
-            "user_form.html",
-            {
-                "form": form,
-                "roles": roles,
-                "permissions": permissions,
-                "can_add_role": can_add_role,
-            },
-        )
+        context = {
+            'form': form,
+            'roles': roles,
+            'permissions': permissions,
+            'can_add_role': can_add_role,
+            'username': request.POST.get('username', ''),
+            'email': request.POST.get('email', ''),
+            'first_name': request.POST.get('first_name', ''),
+            'last_name': request.POST.get('last_name', ''),
+        }
+        return render(request, "user_form.html", context)
 
 @method_decorator(require_permission('view_user'), name='dispatch')
 class UserDetailView(LoginRequiredMixin, DetailView):
@@ -236,7 +269,19 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         can_add_role = user_has_permission(self.request.user, 'add_role')
         context['permissions'] = Permission.objects.all() if can_add_role else Permission.objects.none()
         context['can_add_role'] = can_add_role
+        context['username'] = target.username
+        context['email'] = target.email
+        context['first_name'] = target.first_name
+        context['last_name'] = target.last_name
         return context
+
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        context['username'] = form.data.get('username', '')
+        context['email'] = form.data.get('email', '')
+        context['first_name'] = form.data.get('first_name', '')
+        context['last_name'] = form.data.get('last_name', '')
+        return self.render_to_response(context)
 
     def form_valid(self, form):
         target = self.get_object()
@@ -351,13 +396,27 @@ class RoleListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
 class RoleCreateView(LoginRequiredMixin, View):
     def get(self, request):
         permissions = Permission.objects.all()
-        return render(request, 'role_form.html', {'permissions': permissions})
+        context = {
+            'permissions': permissions,
+            'role': None,
+            'name': '',
+            'description': '',
+        }
+        return render(request, 'role_form.html', context)
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
         if not name:
             permissions = Permission.objects.all()
-            return render(request, 'role_form.html', {'permissions': permissions, 'error': 'Name required'})
+            context = {
+                'permissions': permissions,
+                'error': 'Name required',
+                'name': name,
+                'description': description,
+                'role': None,
+            }
+            return render(request, 'role_form.html', context)
         role = Role.objects.create(name=name, description=request.POST.get('description', ''), company=request.user.company)
         perm_ids = request.POST.getlist('permissions')
         role.permissions.set(Permission.objects.filter(id__in=perm_ids))
@@ -370,17 +429,33 @@ class RoleUpdateView(LoginRequiredMixin, View):
         role = get_object_or_404(Role, pk=pk, company=request.user.company)
         perms = Permission.objects.all()
         assigned = set(role.permissions.values_list('id', flat=True))
-        return render(request, 'role_form.html', {'role': role, 'permissions': perms, 'assigned_ids': assigned})
+        context = {
+            'role': role,
+            'permissions': perms,
+            'assigned_ids': assigned,
+            'name': role.name,
+            'description': role.description or '',
+        }
+        return render(request, 'role_form.html', context)
 
     def post(self, request, pk):
         role = get_object_or_404(Role, pk=pk, company=request.user.company)
         name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
         if not name:
             perms = Permission.objects.all()
             assigned = set(int(i) for i in request.POST.getlist('permissions'))
-            return render(request, 'role_form.html', {'role': role, 'permissions': perms, 'assigned_ids': assigned, 'error': 'Name required'})
+            context = {
+                'role': role,
+                'permissions': perms,
+                'assigned_ids': assigned,
+                'error': 'Name required',
+                'name': name,
+                'description': description,
+            }
+            return render(request, 'role_form.html', context)
         role.name = name
-        role.description = request.POST.get('description', '')
+        role.description = description
         role.save()
         perm_ids = request.POST.getlist('permissions')
         role.permissions.set(Permission.objects.filter(id__in=perm_ids))
