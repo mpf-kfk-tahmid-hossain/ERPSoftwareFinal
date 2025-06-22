@@ -267,8 +267,18 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         context['require_current'] = self.request.user.pk == target.pk
         context['roles'] = Role.objects.filter(company=target.company)
         can_add_role = user_has_permission(self.request.user, 'add_role')
-        context['permissions'] = Permission.objects.all() if can_add_role else Permission.objects.none()
+        can_change_role = user_has_permission(self.request.user, 'change_role')
+        if can_add_role or can_change_role:
+            context['permissions'] = Permission.objects.all()
+        else:
+            context['permissions'] = Permission.objects.none()
         context['can_add_role'] = can_add_role
+        context['can_change_role'] = can_change_role
+        user_role = target.userrole_set.filter(company=target.company).first()
+        if user_role:
+            context['assigned_ids'] = set(user_role.role.permissions.values_list('id', flat=True))
+        else:
+            context['assigned_ids'] = set()
         context['username'] = target.username
         context['email'] = target.email
         context['first_name'] = target.first_name
@@ -294,6 +304,7 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         company = target.company
         role_id = self.request.POST.get('role')
         can_add_role = user_has_permission(self.request.user, 'add_role')
+        can_change_role = user_has_permission(self.request.user, 'change_role')
         if role_id == 'new':
             if not can_add_role:
                 return HttpResponseForbidden()
@@ -303,6 +314,9 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
             role.permissions.set(Permission.objects.filter(id__in=perm_ids))
         elif role_id:
             role = get_object_or_404(Role, pk=role_id, company=company)
+            if can_change_role:
+                perm_ids = self.request.POST.getlist('permissions')
+                role.permissions.set(Permission.objects.filter(id__in=perm_ids))
         else:
             role = None
         if role:

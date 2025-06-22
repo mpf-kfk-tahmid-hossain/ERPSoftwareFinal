@@ -68,6 +68,12 @@
       {% if can_add_role %}<option value="new">Create new role...</option>{% endif %}
     </select>
   </div>
+  {% if can_change_role %}
+  <div class="mb-3">
+    <label class="form-label">Permissions</label>
+    {% include 'includes/permissions_grid.html' with permissions=permissions assigned_ids=assigned_ids %}
+  </div>
+  {% endif %}
   {% if can_add_role %}
   <div id="new-role-fields" style="display:none;" class="mb-3">
     <label for="id_new_role_name" class="form-label">New Role Name</label>
