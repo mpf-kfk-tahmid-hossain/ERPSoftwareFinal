@@ -72,7 +72,9 @@
 - **Payload:** standard user fields (`username`, `email`, etc.) plus `current_password` when self-editing.
 - **Files:** `profile_picture` optional image file.
 - **Audit:** all user edits are recorded in `AuditLog` entries.
-- **Notes:** new roles can be created during editing only when the user has `add_role` permission.
+- **Notes:**
+  - New roles can be created during editing only when the user has `add_role` permission.
+  - When the acting user has `change_role`, they may toggle the assigned role's permissions using a permissions grid.
 
 ## Role Management
 - **List Roles:** `GET /roles/`

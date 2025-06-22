@@ -445,6 +445,44 @@ class AddRolePermissionTests(TestCase):
         self.assertTrue(Role.objects.filter(name='TempRole', company=self.company).exists())
 
 
+class ChangeRolePermissionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='PermEditCo', code='PEC', address='')
+        self.admin_role = Role.objects.create(name='AdminRole', company=self.company)
+        self.target_role = Role.objects.create(name='TargetRole', company=self.company)
+        self.change_user_perm = Permission.objects.get_or_create(codename='change_user')[0]
+        self.change_role_perm = Permission.objects.get_or_create(codename='change_role')[0]
+        self.sample_perm = Permission.objects.get_or_create(codename='sample')[0]
+        self.admin_role.permissions.add(self.change_user_perm, self.change_role_perm)
+        self.target_role.permissions.add(self.sample_perm)
+        self.admin = User.objects.create_user(username='adminp', password='pass', company=self.company)
+        self.target = User.objects.create_user(username='targetp', password='pass', company=self.company)
+        UserRole.objects.create(user=self.admin, role=self.admin_role, company=self.company)
+        UserRole.objects.create(user=self.target, role=self.target_role, company=self.company)
+
+    def test_edit_shows_permission_grid(self):
+        self.client.login(username='adminp', password='pass')
+        resp = self.client.get(reverse('user_edit', args=[self.target.id]))
+        self.assertContains(resp, 'perm%s' % self.sample_perm.id)
+
+    def test_edit_updates_role_permissions(self):
+        new_perm = Permission.objects.get_or_create(codename='newp')[0]
+        self.client.login(username='adminp', password='pass')
+        resp = self.client.post(
+            reverse('user_edit', args=[self.target.id]),
+            {
+                'username': 'targetp',
+                'email': '',
+                'first_name': '',
+                'last_name': '',
+                'role': self.target_role.id,
+                'permissions': [str(new_perm.id)],
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(self.target_role.permissions.filter(id=new_perm.id).exists())
+
+
 class AuditLogListTests(TestCase):
     def setUp(self):
         self.company1 = Company.objects.create(name='AL1', code='AL1', address='')

@@ -140,6 +140,7 @@ Buttons are hidden unless the user has the appropriate permission.
 Added audit logging middleware to capture every authenticated request.
 Implemented role management screens and ability to change a user's role during edit.
 Creating a new role from the user form now requires the `add_role` permission.
+When a user has the `change_role` permission they can toggle the assigned role's permissions directly from the user edit page.
 User detail view now shows role, permissions, recent audit logs and profile pictures. User list supports search and pagination.
 Fixed profile picture display by configuring MEDIA_URL and MEDIA_ROOT.
 List views now share filter and pagination components. All list tables allow sorting by any column via reusable headers.
