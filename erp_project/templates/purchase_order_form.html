@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Create Purchase Order{% endblock %}
+{% block content %}
+<h2>Create Purchase Order</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_number">Number</label>
+    <input type="text" name="order_number" id="id_number" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_supplier">Supplier</label>
+    <select name="supplier" id="id_supplier" class="form-select" required>
+      <option value="">----</option>
+      {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <h4>Lines</h4>
+  <div id="lines">
+    <div class="row g-2 mb-2 line-row">
+      <div class="col"><select name="product" class="form-select">{% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+      <div class="col"><input type="text" name="quantity" class="form-control" placeholder="Qty"></div>
+      <div class="col"><input type="text" name="price" class="form-control" placeholder="Price"></div>
+    </div>
+  </div>
+  <button type="button" class="btn btn-secondary" id="add-line">Add Line</button>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success mt-3">Save</button>
+</form>
+<script>
+document.getElementById('add-line').addEventListener('click', function(){
+  const container = document.getElementById('lines');
+  const first = container.querySelector('.line-row');
+  const clone = first.cloneNode(true);
+  clone.querySelectorAll('input').forEach(i=>i.value='');
+  container.appendChild(clone);
+});
+</script>
+{% endblock %}

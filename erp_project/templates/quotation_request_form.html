@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Quotation Request{% endblock %}
+{% block content %}
+<h2>Create Quotation Request</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_number">Number</label>
+    <input type="text" name="number" id="id_number" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_supplier">Supplier</label>
+    <select name="supplier" id="id_supplier" class="form-select" required>
+      <option value="">----</option>
+      {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_product">Product</label>
+    <select name="product" id="id_product" class="form-select" required>
+      <option value="">----</option>
+      {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="row g-2 mb-3">
+    <div class="col">
+      <input type="text" name="quantity" class="form-control" placeholder="Qty" required>
+    </div>
+    <div class="col">
+      <input type="text" name="ean" class="form-control" placeholder="EAN-13">
+    </div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_serials">Serial Numbers (comma separated)</label>
+    <textarea name="serial_list" id="id_serials" class="form-control" rows="3"></textarea>
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

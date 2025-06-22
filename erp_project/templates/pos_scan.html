@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}POS Scan{% endblock %}
+{% block content %}
+<h2>POS Scan</h2>
+<form method="post" class="mb-3">
+  {% csrf_token %}
+  <div class="input-group">
+    <input type="text" name="code" class="form-control" placeholder="EAN or Serial" required>
+    <button class="btn btn-primary" type="submit">Scan</button>
+  </div>
+</form>
+{% if product %}
+<div class="alert alert-success">Found: {{ product.name }}</div>
+{% elif error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% endblock %}
