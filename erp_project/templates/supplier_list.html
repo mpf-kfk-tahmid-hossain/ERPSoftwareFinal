@@ -3,10 +3,15 @@
 {% block content %}
 <h2>Suppliers</h2>
 <table class="table">
-<tr><th>Name</th><th>Contact</th></tr>
-{% for s in suppliers %}
-<tr><td>{{ s.name }}</td><td>{{ s.contact_info }}</td></tr>
-{% endfor %}
+  <tr><th>Name</th><th>Phone</th><th>Email</th><th>Status</th></tr>
+  {% for s in suppliers %}
+  <tr>
+    <td><a href="{% url 'supplier_detail' s.id %}">{{ s.name }}</a></td>
+    <td>{{ s.phone }}</td>
+    <td>{{ s.email }}</td>
+    <td>{% if s.is_connected %}Connected{% else %}Disconnected{% endif %}</td>
+  </tr>
+  {% endfor %}
 </table>
 {% if can_add_supplier %}
 <a class="btn btn-primary" href="{% url 'supplier_add' %}">Add Supplier</a>

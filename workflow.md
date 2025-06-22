@@ -402,4 +402,12 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 * Double-entry ledger integrity maintained throughout.
 * POS-ready, serial-controlled stock is available for sale and reporting.
 
+### Supplier Enhancements
+
+* Added comprehensive supplier profile with contact, banking and license fields.
+* Bank is now a reusable model linked to suppliers.
+* Input validation uses `phonenumbers` and `python-stdnum`.
+* Implemented OTP email verification on creation.
+* Suppliers can be toggled between connected and disconnected instead of deletion.
+
 ---
