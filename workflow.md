@@ -257,3 +257,146 @@ Categories now support a soft "discontinue" action that hides them from selectio
 * This covers all **CRUD**, inventory movement, stock tracking, adjustment, and reporting for the inventory workflow.
 
 ---
+
+## **Workflow Description: iPhone Stock Onboarding, Shelf Readiness & Financial Ledger Integration (with Identifiers)**
+
+### **Purpose**
+
+This workflow governs the full onboarding and financial lifecycle of high-value electronics like iPhones—from product creation, vendor procurement, and goods receipt to inventory accounting—enforcing correct identifiers, serial tracking, and ledger postings. It supports **EAN-13**, **Serial Number**, **ISBN**, and **VIN** identifiers based on product category type.
+
+---
+
+### **Actors**
+
+* **Product Manager** – Manages product definition, category, and identifiers.
+* **Procurement Officer** – Oversees supplier selection and PO lifecycle.
+* **Warehouse Manager** – Handles goods receipt and quality check with identifier scans.
+* **Finance Officer** – Posts double-entry transactions for inventory and payment.
+* **Sales Staff** – Uses identifiers for sales scanning and warranty validation.
+
+---
+
+### **Identifier Types & Rules**
+
+| Identifier Type   | Use Case Examples                    | Description                                                |
+| ----------------- | ------------------------------------ | ---------------------------------------------------------- |
+| **EAN-13**        | Packaged goods, retail items         | Standard retail barcode (13-digit European Article Number) |
+| **Serial Number** | Electronics (e.g., iPhones, laptops) | Unique per unit, used for traceability and warranty        |
+| **ISBN**          | Books                                | Used globally to identify books                            |
+| **VIN**           | Automobiles, vehicles                | Vehicle Identification Number (17-character code)          |
+
+> ✅ **Category configuration must specify required identifiers.**
+> Example: Category `Mobiles > Apple > iPhone` → Requires: EAN-13 + Serial Number.
+
+---
+
+### **Workflow Steps (Updated)**
+
+1. **Category & Product Definition with Identifier Mapping**
+
+   * Define product category tree: `Mobiles > Apple > iPhone`.
+   * While defining category, specify required identifier(s): `EAN-13`, `Serial Number`.
+   * Create product with:
+
+     * SKU, brand, storage, color
+     * Barcode (EAN-13) and enable **per-unit serial number tracking**
+     * VAT and pricing
+   * Save identifier rules to enforce validation across stock and sales workflows.
+
+2. **Quotation Request & Vendor Finalization**
+
+   * Request quotation with product specs and identifier type compliance.
+   * For serialized goods, request **IMEI list** or serial number batch in advance.
+
+3. **Purchase Order (PO) Creation**
+
+   * Create PO with quantity, pricing, vendor details.
+   * No financial entry yet.
+
+4. **Advance Payment (Optional)**
+
+   * Record payment:
+
+     ```
+     Dr Supplier Advance
+     Cr Bank / Cash (must not go negative)
+     ```
+
+5. **Goods Receipt Note (GRN)**
+
+   * On delivery, scan:
+
+     * EAN-13 barcode (for SKU match)
+     * Serial Number (for IMEI validation)
+   * Reject duplicates or missing identifiers.
+   * Entry:
+
+     ```
+     Dr Inventory (iPhone)
+     Cr Supplier (Vendor)
+     ```
+
+6. **Invoice Booking & Payment**
+
+   * If unpaid:
+
+     ```
+     Dr Supplier
+     Cr Bank / Cash
+     ```
+   * If advance:
+
+     ```
+     Dr Supplier
+     Cr Supplier Advance
+     ```
+
+7. **Warehouse to Store Shelf Transfer**
+
+   * Internal stock move with identifiers retained.
+   * No financial entry.
+
+8. **POS/Online Store Activation**
+
+   * Items become searchable and scannable by **EAN-13 or Serial Number**.
+   * Optional: Enforce identifier scan at point of sale to avoid counterfeit.
+
+---
+
+### **Ledger Rules (Same)**
+
+| Ledger               | Description                           | Constraints         |
+| -------------------- | ------------------------------------- | ------------------- |
+| **Inventory Ledger** | Valuation of goods based on GRN value | Increases on GRN    |
+| **Supplier Ledger**  | Payables for iPhone purchases         | Credited on GRN     |
+| **Supplier Advance** | Prepaid to vendor before invoice      | Adjusted at invoice |
+| **Cash Ledger**      | Used for cash payments                | Cannot go negative  |
+| **Bank Ledger**      | Used for transfers/cheques            | Cannot go negative  |
+
+---
+
+### 📋 **Checklist: iPhone Onboarding + Identifiers + Ledger**
+
+| #  | Task                                                            | Status |
+| -- | --------------------------------------------------------------- | ------ |
+| 1  | Category Definition with Identifier Rules                       | ⬜      |
+| 2  | Product Creation (SKU, VAT, EAN-13, Serial Tracking)            | ⬜      |
+| 3  | Quotation Request + Identifier Compliance                       | ⬜      |
+| 4  | PO Creation (non-financial)                                     | ⬜      |
+| 5  | Advance Payment (Dr Supplier Advance, Cr Bank/Cash)             | ⬜      |
+| 6  | GRN with EAN-13 + Serial Validation (Dr Inventory, Cr Supplier) | ⬜      |
+| 7  | Supplier Invoice Payment (Cash/Bank or Advance Adjusted)        | ⬜      |
+| 8  | Shelf Transfer (Internal)                                       | ⬜      |
+| 9  | POS Activation (Identifier scan enabled)                        | ⬜      |
+| 10 | Ledger Validation + Audit Trail                                 | ⬜      |
+
+---
+
+### **Outcome**
+
+* Category-specific identifiers are enforced from setup to sale.
+* Product traceability and warranty enforcement are accurate.
+* Double-entry ledger integrity maintained throughout.
+* POS-ready, serial-controlled stock is available for sale and reporting.
+
+---
