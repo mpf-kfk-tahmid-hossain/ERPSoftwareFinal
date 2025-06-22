@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}PO {{ po.order_number }}{% endblock %}
+{% block content %}
+<h2>Purchase Order {{ po.order_number }}</h2>
+<table class="table">
+<tr><th>Product</th><th>Qty</th><th>Price</th><th></th></tr>
+{% for line in po.lines.all %}
+<tr>
+  <td>{{ line.product.name }}</td>
+  <td>{{ line.quantity }}</td>
+  <td>{{ line.unit_price }}</td>
+  <td>
+    {% if can_receive %}
+    <a class="btn btn-sm btn-secondary" href="{% url 'goods_receipt_add' po.id line.id %}">Receive</a>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

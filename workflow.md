@@ -307,6 +307,7 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 
    * Request quotation with product specs and identifier type compliance.
    * For serialized goods, request **IMEI list** or serial number batch in advance.
+   * Implemented via `QuotationRequestCreateView` (`/purchasing/quotations/add/`) accessible from navigation as **New Quotation**.
 
 3. **Purchase Order (PO) Creation**
 
@@ -360,6 +361,7 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 
    * Items become searchable and scannable by **EAN-13 or Serial Number**.
    * Optional: Enforce identifier scan at point of sale to avoid counterfeit.
+   * Implemented via `/pos/scan/` with search form linked as **POS Scan** in navigation.
 
 ---
 
@@ -379,16 +381,16 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 
 | #  | Task                                                            | Status |
 | -- | --------------------------------------------------------------- | ------ |
-| 1  | Category Definition with Identifier Rules                       | ⬜      |
-| 2  | Product Creation (SKU, VAT, EAN-13, Serial Tracking)            | ⬜      |
-| 3  | Quotation Request + Identifier Compliance                       | ⬜      |
-| 4  | PO Creation (non-financial)                                     | ⬜      |
-| 5  | Advance Payment (Dr Supplier Advance, Cr Bank/Cash)             | ⬜      |
-| 6  | GRN with EAN-13 + Serial Validation (Dr Inventory, Cr Supplier) | ⬜      |
-| 7  | Supplier Invoice Payment (Cash/Bank or Advance Adjusted)        | ⬜      |
-| 8  | Shelf Transfer (Internal)                                       | ⬜      |
-| 9  | POS Activation (Identifier scan enabled)                        | ⬜      |
-| 10 | Ledger Validation + Audit Trail                                 | ⬜      |
+| 1  | Category Definition with Identifier Rules                       | ✅ Implemented by Agent |
+| 2  | Product Creation (SKU, VAT, EAN-13, Serial Tracking)            | ✅ Implemented by Agent |
+| 3  | Quotation Request + Identifier Compliance                       | ✅ Implemented via `QuotationRequestCreateView` |
+| 4  | PO Creation (non-financial)                                     | ✅ Implemented by Agent |
+| 5  | Advance Payment (Dr Supplier Advance, Cr Bank/Cash)             | ✅ Implemented by Agent |
+| 6  | GRN with EAN-13 + Serial Validation (Dr Inventory, Cr Supplier) | ✅ Implemented by Agent |
+| 7  | Supplier Invoice Payment (Cash/Bank or Advance Adjusted)        | ✅ Implemented by Agent |
+| 8  | Shelf Transfer (Internal)                                       | ✅ Implemented by Agent |
+| 9  | POS Activation (Identifier scan enabled)                        | ✅ Implemented via POS scan view |
+| 10 | Ledger Validation + Audit Trail                                 | ✅ Implemented by Agent |
 
 ---
 

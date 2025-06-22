@@ -51,9 +51,23 @@
     <label for="id_barcode" class="form-label">Barcode</label>
     <input type="text" name="barcode" id="id_barcode" class="form-control">
   </div>
+  <div class="row g-2">
+    <div class="col">
+      <label for="id_vat" class="form-label">VAT %</label>
+      <input type="text" name="vat_rate" id="id_vat" class="form-control">
+    </div>
+    <div class="col">
+      <label for="id_price" class="form-label">Sale Price</label>
+      <input type="text" name="sale_price" id="id_price" class="form-control">
+    </div>
+  </div>
   <div class="mb-3">
     <label for="id_description" class="form-label">Description</label>
     <textarea name="description" id="id_description" class="form-control"></textarea>
+  </div>
+  <div class="form-check mb-3">
+    <input type="checkbox" class="form-check-input" name="track_serial" id="id_track_serial">
+    <label for="id_track_serial" class="form-check-label">Track Serial Numbers</label>
   </div>
   {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
   <button type="submit" class="btn btn-success">Save</button>

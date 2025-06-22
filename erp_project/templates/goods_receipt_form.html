@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Receive Goods{% endblock %}
+{% block content %}
+<h2>Receive {{ line.product.name }}</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_qty">Qty</label>
+    <input type="text" name="qty" id="id_qty" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_ean">EAN-13</label>
+    <input type="text" name="ean" id="id_ean" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_serial">Serial</label>
+    <input type="text" name="serial" id="id_serial" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_wh">Warehouse</label>
+    <select name="warehouse" id="id_wh" class="form-select" required>
+      {% for w in warehouses %}<option value="{{ w.id }}">{{ w.name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

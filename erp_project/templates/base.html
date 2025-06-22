@@ -30,6 +30,15 @@
         {% if user.is_authenticated and user.company and nav_perms.view_product %}
         <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}">Products</a></li>
         {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.view_supplier %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'supplier_list' %}">Suppliers</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.add_quotationrequest %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'quotation_add' %}">New Quotation</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.add_purchaseorder %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'purchase_order_add' %}">New PO</a></li>
+        {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.view_stocklot %}
         <li class="nav-item"><a class="nav-link" href="{% url 'stock_lot_list' %}">Stock Lots</a></li>
         {% endif %}
@@ -41,6 +50,9 @@
         {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.view_stock_on_hand %}
         <li class="nav-item"><a class="nav-link" href="{% url 'stock_on_hand' %}">Stock On Hand</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.view_product %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'pos_scan' %}">POS Scan</a></li>
         {% endif %}
         {% if user.is_authenticated and nav_perms.view_auditlog %}
         <li class="nav-item"><a class="nav-link" href="{% url 'audit_log_list' %}">Audit Logs</a></li>

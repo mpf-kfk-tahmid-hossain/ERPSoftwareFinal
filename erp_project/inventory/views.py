@@ -17,6 +17,7 @@ from .models import (
     StockLot,
     StockMovement,
     InventoryAdjustment,
+    IdentifierType,
 )
 
 
@@ -139,11 +140,14 @@ class ProductCategoryCreateView(View):
         roots = ProductCategory.objects.filter(
             company=request.user.company, parent__isnull=True
         ).order_by('name')
+        id_types = IdentifierType.objects.all()
         context = {
             'root_categories': roots,
             'category': None,
             'name': '',
             'parent': '',
+            'identifier_types': id_types,
+            'selected_ids': [],
         }
         return render(request, 'category_form.html', context)
 
@@ -157,12 +161,15 @@ class ProductCategoryCreateView(View):
             roots = ProductCategory.objects.filter(
                 company=request.user.company, parent__isnull=True
             ).order_by('name')
+            id_types = IdentifierType.objects.all()
             context = {
                 'error': 'Name required',
                 'root_categories': roots,
                 'name': name,
                 'parent': parent_id,
                 'category': None,
+                'identifier_types': id_types,
+                'selected_ids': [int(i) for i in request.POST.getlist('identifiers') if i.isdigit()],
             }
             return render(request, 'category_form.html', context)
         if ProductCategory.objects.filter(name=name, company=request.user.company).exists():
@@ -177,7 +184,9 @@ class ProductCategoryCreateView(View):
                 'category': None,
             }
             return render(request, 'category_form.html', context)
-        ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
+        cat = ProductCategory.objects.create(name=name, parent=parent, company=request.user.company)
+        ids = [int(i) for i in request.POST.getlist('identifiers') if i.isdigit()]
+        cat.required_identifiers.set(IdentifierType.objects.filter(id__in=ids))
         return redirect('category_add')
 
 
@@ -193,11 +202,15 @@ class ProductCategoryUpdateView(View):
         roots = ProductCategory.objects.filter(
             company=request.user.company, parent__isnull=True
         ).exclude(pk=category.pk).order_by('name')
+        id_types = IdentifierType.objects.all()
+        selected = list(category.required_identifiers.values_list('id', flat=True))
         context = {
             'category': category,
             'root_categories': roots,
             'name': category.name,
             'parent': category.parent_id,
+            'identifier_types': id_types,
+            'selected_ids': selected,
         }
         return render(request, 'category_form.html', context)
 
@@ -212,12 +225,15 @@ class ProductCategoryUpdateView(View):
             roots = ProductCategory.objects.filter(
                 company=request.user.company, parent__isnull=True
             ).exclude(pk=category.pk).order_by('name')
+            id_types = IdentifierType.objects.all()
             context = {
                 'error': 'Name required',
                 'category': category,
                 'root_categories': roots,
                 'name': name,
                 'parent': parent_id,
+                'identifier_types': id_types,
+                'selected_ids': [int(i) for i in request.POST.getlist('identifiers') if i.isdigit()],
             }
             return render(request, 'category_form.html', context)
         if ProductCategory.objects.filter(name=name, company=request.user.company).exclude(pk=category.pk).exists():
@@ -235,6 +251,8 @@ class ProductCategoryUpdateView(View):
         category.name = name
         category.parent = parent
         category.save()
+        ids = [int(i) for i in request.POST.getlist('identifiers') if i.isdigit()]
+        category.required_identifiers.set(IdentifierType.objects.filter(id__in=ids))
         return redirect('category_list')
 
 
@@ -407,7 +425,10 @@ class ProductCreateView(View):
             category=category,
             company=request.user.company,
             barcode=request.POST.get('barcode', '').strip(),
-            description=request.POST.get('description', '').strip()
+            vat_rate=request.POST.get('vat_rate') or 0,
+            sale_price=request.POST.get('sale_price') or 0,
+            description=request.POST.get('description', '').strip(),
+            track_serial=bool(request.POST.get('track_serial'))
         )
         log_action(request.user, 'create_product', details={'sku': sku}, company=request.user.company)
         return redirect('product_list')

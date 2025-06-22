@@ -22,6 +22,7 @@ class ProductCategory(models.Model):
     )
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     is_discontinued = models.BooleanField(default=False)
+    required_identifiers = models.ManyToManyField('IdentifierType', blank=True)
 
     def __str__(self) -> str:
         return self.name
@@ -71,6 +72,9 @@ class Product(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     description = models.TextField(blank=True)
     is_discontinued = models.BooleanField(default=False)
+    track_serial = models.BooleanField(default=False)
+    vat_rate = models.DecimalField(max_digits=4, decimal_places=2, default=0)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self) -> str:
         return self.name
@@ -129,4 +133,21 @@ class InventoryAdjustment(models.Model):
     reason = models.CharField(max_length=50, choices=REASON_CHOICES)
     qty = models.DecimalField(max_digits=10, decimal_places=2)
     notes = models.TextField(blank=True)
+
+
+class IdentifierType(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ProductSerial(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    serial = models.CharField(max_length=100)
+    is_sold = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('product', 'serial')
 

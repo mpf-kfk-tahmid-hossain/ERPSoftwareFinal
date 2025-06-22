@@ -13,6 +13,14 @@
     <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
     {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
   </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_identifiers">Required Identifiers</label>
+    <select multiple name="identifiers" id="id_identifiers" class="form-select">
+      {% for it in identifier_types %}
+      <option value="{{ it.id }}"{% if it.id in selected_ids %} selected{% endif %}>{{ it.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
   <button type="submit" class="btn btn-success">Save</button>
 </form>
 

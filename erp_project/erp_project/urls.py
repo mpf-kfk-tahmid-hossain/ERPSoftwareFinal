@@ -47,6 +47,8 @@ urlpatterns = [
     path('audit-logs/', AuditLogListView.as_view(), name='audit_log_list'),
     path('audit-logs/<int:pk>/', AuditLogDetailView.as_view(), name='audit_log_detail'),
     path('inventory/', include('inventory.urls')),
+    path('purchasing/', include('purchasing.urls')),
+    path('pos/', include('pos.urls')),
     path('api/whoami/', WhoAmIView.as_view(), name='whoami'),
     path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
     path('', DashboardView.as_view(), name='dashboard'),
