@@ -1,19 +1,58 @@
 from decimal import Decimal
+import random
 from django.db import models
+from django.utils import timezone
 from accounts.models import Company
 from inventory.models import Product, Warehouse, ProductSerial
 from ledger.utils import post_entry
 
 
+class Bank(models.Model):
+    """Financial institution used for supplier payments."""
+
+    name = models.CharField(max_length=100, unique=True)
+    swift_code = models.CharField(max_length=11, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Supplier(models.Model):
     """Vendor providing products."""
     name = models.CharField(max_length=255)
-    contact_info = models.TextField(blank=True)
+    contact_person = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    email = models.EmailField(unique=True, null=True, blank=True)
+
+    trade_license_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    trn = models.CharField(max_length=15, blank=True, null=True, unique=True)
+    vat_certificate = models.FileField(upload_to='vat_docs/', blank=True)
+
+    iban = models.CharField(max_length=23, blank=True, null=True, unique=True)
+    bank = models.ForeignKey(Bank, on_delete=models.PROTECT, null=True, blank=True)
+
+    address = models.TextField(blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
+    is_connected = models.BooleanField(default=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
+
+
+class SupplierOTP(models.Model):
+    """One-time passcode for supplier email verification."""
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='otps')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_valid(self):
+        """Return True if OTP is within 10 minutes and unused."""
+        expiry = self.created_at + timezone.timedelta(minutes=10)
+        return not self.is_used and timezone.now() < expiry
 
 
 class PurchaseOrder(models.Model):

@@ -5,3 +5,5 @@ tzdata==2025.2
 argon2-cffi==23.1.0
 Faker==24.4.0
 Pillow==11.2.1
+phonenumbers==8.13.32
+python-stdnum==1.18

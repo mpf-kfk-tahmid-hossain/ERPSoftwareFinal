@@ -7,7 +7,7 @@ from inventory.models import (
     IdentifierType, ProductSerial, StockMovement
 )
 from ledger.models import LedgerAccount, LedgerEntry
-from .models import Supplier, PurchaseOrder, PurchaseOrderLine, GoodsReceipt, Payment
+from .models import Bank, Supplier, PurchaseOrder, PurchaseOrderLine, GoodsReceipt, Payment
 
 User = get_user_model()
 
@@ -33,6 +33,7 @@ class PurchasingLedgerTests(TestCase):
             LedgerAccount.objects.create(code=code, name=code, company=self.company)
         from ledger.utils import post_entry
         post_entry(self.company, 'open cash', [('Cash', 1000, 0)])
+        self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
         # identifier types
         self.ean = IdentifierType.objects.create(code='EAN13', name='EAN-13')
         self.serial = IdentifierType.objects.create(code='SER', name='Serial')
@@ -46,7 +47,7 @@ class PurchasingLedgerTests(TestCase):
             category=cat, company=self.company, barcode='1234567890123',
             track_serial=True, vat_rate=5, sale_price=1000
         )
-        sup = Supplier.objects.create(name='Apple', company=self.company)
+        sup = Supplier.objects.create(name='Apple', contact_person='CP', email='apple@example.com', phone='+14155550100', company=self.company, bank=self.bank)
         po = PurchaseOrder.objects.create(order_number='PO1', supplier=sup, company=self.company)
         PurchaseOrderLine.objects.create(purchase_order=po, product=prod, quantity=1, unit_price=1000)
         Payment.objects.create(
@@ -107,6 +108,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
             LedgerAccount.objects.create(code=code, name=code, company=self.company)
         from ledger.utils import post_entry
         post_entry(self.company, 'open cash', [('Cash', 1000, 0)])
+        self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
 
         self.ean = IdentifierType.objects.create(code='EAN13', name='EAN-13')
         self.serial = IdentifierType.objects.create(code='SER', name='Serial')
@@ -139,8 +141,20 @@ class IPhoneWorkflowIntegrationTests(TestCase):
         product = Product.objects.get(sku='IP15')
 
         # Supplier
-        self.client.post(reverse('supplier_add'), {'name': 'Apple', 'contact_info': 'Cupertino'})
-        supplier = Supplier.objects.get(name='Apple')
+        self.client.post(reverse('supplier_add'), {
+            'name': 'Apple',
+            'contact_person': 'Tim',
+            'phone': '+14155550111',
+            'email': 'apple@example.com',
+            'trade_license_number': '',
+            'trn': '',
+            'iban': '',
+            'bank_name': 'TestBank',
+            'swift_code': 'TESTBANK',
+            'address': 'Cupertino',
+        })
+        supplier = Supplier.objects.filter(name='Apple').first()
+        self.assertIsNotNone(supplier)
 
         # Purchase order
         self.client.post(reverse('purchase_order_add'), {
@@ -216,7 +230,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
             track_serial=True,
             company=self.company,
         )
-        sup = Supplier.objects.create(name='ACME', company=self.company)
+        sup = Supplier.objects.create(name='ACME', contact_person='CP2', email='acme@example.com', phone='+14155550101', company=self.company, bank=self.bank)
         po = PurchaseOrder.objects.create(order_number='POX', supplier=sup, company=self.company)
         line = PurchaseOrderLine.objects.create(purchase_order=po, product=prod, quantity=1, unit_price=10)
         wh = Warehouse.objects.create(name='W', location='L', company=self.company)
@@ -228,7 +242,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
         self.assertContains(resp, 'Serial duplicate')
 
     def test_insufficient_cash_blocks_payment(self):
-        po = PurchaseOrder.objects.create(order_number='POZ', supplier=Supplier.objects.create(name='S', company=self.company), company=self.company)
+        po = PurchaseOrder.objects.create(order_number='POZ', supplier=Supplier.objects.create(name='S', contact_person='CP3', email='s@example.com', phone='+14155550102', company=self.company, bank=self.bank), company=self.company)
         with self.assertRaises(ValueError):
             Payment.objects.create(purchase_order=po, amount=2000, method=Payment.METHOD_CASH, company=self.company)
 
@@ -244,6 +258,7 @@ class QuotationRequestComplianceTests(TestCase):
             role.permissions.add(perm)
         UserRole.objects.create(user=self.user, role=role, company=self.company)
         self.client.login(username='q', password='pass')
+        self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
         self.ean = IdentifierType.objects.create(code='EAN13', name='EAN-13')
         self.ser = IdentifierType.objects.create(code='SER', name='Serial')
 
@@ -252,7 +267,7 @@ class QuotationRequestComplianceTests(TestCase):
         cat.required_identifiers.set([self.ean, self.ser])
         unit = ProductUnit.objects.create(code='PCS', name='Pieces')
         prod = Product.objects.create(name='Phone1', sku='P1', unit=unit, company=self.company, category=cat, barcode='1111111111111', track_serial=True)
-        sup = Supplier.objects.create(name='Sup', company=self.company)
+        sup = Supplier.objects.create(name='Sup', contact_person='CP4', email='sup@example.com', phone='+14155550103', company=self.company, bank=self.bank)
         url = reverse('quotation_add')
         resp = self.client.post(url, {
             'number': 'Q1', 'supplier': sup.id, 'product': prod.id,
