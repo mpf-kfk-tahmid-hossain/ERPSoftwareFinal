@@ -20,6 +20,7 @@ class Bank(models.Model):
 class Supplier(models.Model):
     """Vendor providing products."""
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     contact_person = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True, null=True, blank=True)

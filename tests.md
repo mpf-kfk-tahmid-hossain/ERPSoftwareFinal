@@ -2,39 +2,39 @@
 
 #### **Supplier Forms**
 
-* [ ] `SupplierForm` includes a **description** field for a brief company summary.
-* [ ] Add `UpdateSupplierInformationForm` to allow supplier data updates.
+* [x] `SupplierForm` includes a **description** field for a brief company summary.
+* [x] Add `UpdateSupplierInformationForm` to allow supplier data updates.
 
 #### **Disconnection & Permissions**
 
-* [ ] Add "Discontinue Supplier" action/button in `SupplierDetailView`.
-* [ ] Permission check: Only users with `can_discontinue_supplier` can discontinue/reactivate.
-* [ ] Discontinued suppliers can be brought back (reactivated).
+* [x] Add "Discontinue Supplier" action/button in `SupplierDetailView`.
+* [x] Permission check: Only users with `can_discontinue_supplier` can discontinue/reactivate.
+* [x] Discontinued suppliers can be brought back (reactivated).
 
 #### **Supplier Verification**
 
-* [ ] If **email** or **phone number** is changed:
+* [x] If **email** or **phone number** is changed:
 
-  * [ ] Set supplier as **unverified**.
-  * [ ] Trigger verification workflow.
+  * [x] Set supplier as **unverified**.
+  * [x] Trigger verification workflow.
 
 #### **OTP Verification**
 
-* [ ] `SupplierDetailView` includes a **"Request OTP"** button.
+* [x] `SupplierDetailView` includes a **"Request OTP"** button.
 
-  * [ ] On click, show a **modal** for OTP input.
-  * [ ] Modal has:
+  * [x] On click, show a **modal** for OTP input.
+  * [x] Modal has:
 
-    * [ ] OTP field
-    * [ ] **Verify** button
-    * [ ] **Cancel** button to close modal without verifying
+    * [x] OTP field
+    * [x] **Verify** button
+    * [x] **Cancel** button to close modal without verifying
 
 #### **Supplier List View**
 
-* [ ] Use `ExistingListView` for `SupplierListView`.
-* [ ] Add **Search** functionality (by name, contact, etc).
-* [ ] Add **Filter** options (by verification status, discontinued status, etc).
-* [ ] Include **Pagination** (page navigation).
-* [ ] Enable **Sorting** (by name, date added, etc).
+* [x] Use `ExistingListView` for `SupplierListView`.
+* [x] Add **Search** functionality (by name, contact, etc).
+* [x] Add **Filter** options (by verification status, discontinued status, etc).
+* [x] Include **Pagination** (page navigation).
+* [x] Enable **Sorting** (by name, date added, etc).
 
 ---

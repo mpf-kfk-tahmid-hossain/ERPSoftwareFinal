@@ -39,5 +39,19 @@
 - **Toggle Connection**
   - **URL:** `/purchasing/suppliers/<id>/toggle/`
   - **Method:** `POST`
-  - **Auth:** `change_supplier`
+  - **Auth:** `can_discontinue_supplier`
   - **Response:** Redirect to supplier detail with updated status
+
+- **Update Supplier**
+  - **URL:** `/purchasing/suppliers/<id>/edit/`
+  - **Method:** `POST`
+  - **Auth:** `change_supplier`
+  - **Payload:** same as create supplier
+  - **Notes:** Changing phone or email marks supplier unverified and sends OTP
+  - **Response:** Redirect to supplier detail
+
+- **Request OTP**
+  - **URL:** `/purchasing/suppliers/<id>/request-otp/`
+  - **Method:** `POST`
+  - **Auth:** `change_supplier`
+  - **Response:** Partial HTML modal prompting for OTP entry
