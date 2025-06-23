@@ -4,52 +4,60 @@
 <h2>Add Supplier</h2>
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
-  <div class="mb-3">
-    <label for="id_name" class="form-label">Name</label>
-    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label for="id_name" class="form-label">Name</label>
+        <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="id_contact_person" class="form-label">Contact Person</label>
+        <input type="text" name="contact_person" id="id_contact_person" class="form-control" value="{{ contact_person }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="id_phone" class="form-label">Phone</label>
+        <input type="text" name="phone" id="id_phone" class="form-control" value="{{ phone }}">
+      </div>
+      <div class="mb-3">
+        <label for="id_email" class="form-label">Email</label>
+        <input type="email" name="email" id="id_email" class="form-control" value="{{ email }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="id_address" class="form-label">Address</label>
+        <textarea name="address" id="id_address" class="form-control">{{ address }}</textarea>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label for="id_trade_license_number" class="form-label">Trade License</label>
+        <input type="text" name="trade_license_number" id="id_trade_license_number" class="form-control" value="{{ trade_license_number }}">
+      </div>
+      <div class="mb-3">
+        <label for="id_trn" class="form-label">TRN</label>
+        <input type="text" name="trn" id="id_trn" class="form-control" value="{{ trn }}">
+      </div>
+      <div class="mb-3">
+        <label for="id_bank_name" class="form-label">Bank</label>
+        <input list="bank-list" type="text" name="bank_name" id="id_bank_name" class="form-control" value="{{ bank_name }}" placeholder="Select or type new">
+        <datalist id="bank-list">
+          {% for b in banks %}
+          <option value="{{ b.name }}"></option>
+          {% endfor %}
+        </datalist>
+      </div>
+      <div class="mb-3">
+        <label for="id_iban" class="form-label">IBAN</label>
+        <input type="text" name="iban" id="id_iban" class="form-control" value="{{ iban }}">
+      </div>
+      <div class="mb-3">
+        <label for="id_swift_code" class="form-label">SWIFT</label>
+        <input type="text" name="swift_code" id="id_swift_code" class="form-control" value="{{ swift_code }}">
+      </div>
+    </div>
+    <div class="col-12">
+      {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+      <button type="submit" class="btn btn-success">Save</button>
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="id_contact_person" class="form-label">Contact Person</label>
-    <input type="text" name="contact_person" id="id_contact_person" class="form-control" value="{{ contact_person }}" required>
-  </div>
-  <div class="mb-3">
-    <label for="id_phone" class="form-label">Phone</label>
-    <input type="text" name="phone" id="id_phone" class="form-control" value="{{ phone }}">
-  </div>
-  <div class="mb-3">
-    <label for="id_email" class="form-label">Email</label>
-    <input type="email" name="email" id="id_email" class="form-control" value="{{ email }}" required>
-  </div>
-  <div class="mb-3">
-    <label for="id_trade_license_number" class="form-label">Trade License</label>
-    <input type="text" name="trade_license_number" id="id_trade_license_number" class="form-control" value="{{ trade_license_number }}">
-  </div>
-  <div class="mb-3">
-    <label for="id_trn" class="form-label">TRN</label>
-    <input type="text" name="trn" id="id_trn" class="form-control" value="{{ trn }}">
-  </div>
-  <div class="mb-3">
-    <label for="id_iban" class="form-label">IBAN</label>
-    <input type="text" name="iban" id="id_iban" class="form-control" value="{{ iban }}">
-  </div>
-  <div class="mb-3">
-    <label for="id_bank_name" class="form-label">Bank</label>
-    <select name="bank_name" id="id_bank_name" class="form-select">
-      <option value="">-- New Bank --</option>
-      {% for b in banks %}
-      <option value="{{ b.name }}" {% if bank_name == b.name %}selected{% endif %}>{{ b.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="mb-3">
-    <label for="id_swift_code" class="form-label">SWIFT</label>
-    <input type="text" name="swift_code" id="id_swift_code" class="form-control" value="{{ swift_code }}">
-  </div>
-  <div class="mb-3">
-    <label for="id_address" class="form-label">Address</label>
-    <textarea name="address" id="id_address" class="form-control">{{ address }}</textarea>
-  </div>
-  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-  <button type="submit" class="btn btn-success">Save</button>
 </form>
 {% endblock %}
