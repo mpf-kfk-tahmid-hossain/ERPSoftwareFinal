@@ -2,7 +2,6 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
-from django.contrib import messages
 from .models import Company
 import json
 from django.core.exceptions import PermissionDenied
@@ -301,14 +300,6 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
             if not target.check_password(current or ''):
                 form.add_error(None, 'Current password incorrect')
                 return self.form_invalid(form)
-        # Only the username is strictly required when updating. Other fields may
-        # be left blank based on business rules and existing tests.
-        required_fields = ['username']
-        for field in required_fields:
-            if not (self.request.POST.get(field, '').strip()):
-                form.add_error(field, 'This field is required')
-        if form.errors:
-            return self.form_invalid(form)
         response = super().form_valid(form)
         company = target.company
         role_id = self.request.POST.get('role')
@@ -337,7 +328,6 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
             request_type=self.request.method,
             company=self.request.user.company,
         )
-        messages.success(self.request, 'User updated successfully')
         return response
 
 @method_decorator(require_permission('change_user'), name='dispatch')

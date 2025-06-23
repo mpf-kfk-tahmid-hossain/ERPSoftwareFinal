@@ -2,9 +2,9 @@ from decimal import Decimal
 import random
 from django.db import models
 from django.utils import timezone
-from erp_project.accounts.models import Company
-from erp_project.inventory.models import Product, Warehouse, ProductSerial
-from erp_project.ledger.utils import post_entry
+from accounts.models import Company
+from inventory.models import Product, Warehouse, ProductSerial
+from ledger.utils import post_entry
 
 
 class Bank(models.Model):

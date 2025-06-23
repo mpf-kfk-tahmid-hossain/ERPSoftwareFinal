@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load static %}
 {% block title %}Update Supplier{% endblock %}
 {% block content %}
 <h2>Update Supplier</h2>
@@ -43,8 +42,12 @@
       </div>
       <div class="mb-3">
         <label for="id_bank_name" class="form-label">Bank</label>
-        <input list="bank-options" type="text" name="bank_name" id="id_bank_name" class="form-control" value="{{ bank_name }}" placeholder="Select or type new">
-        <datalist id="bank-options"></datalist>
+        <input list="bank-list" type="text" name="bank_name" id="id_bank_name" class="form-control" value="{{ bank_name }}" placeholder="Select or type new">
+        <datalist id="bank-list">
+          {% for b in banks %}
+          <option value="{{ b.name }}"></option>
+          {% endfor %}
+        </datalist>
       </div>
       <div class="mb-3">
         <label for="id_iban" class="form-label">IBAN</label>
@@ -61,7 +64,4 @@
     </div>
   </div>
 </form>
-{% endblock %}
-{% block extra_js %}
-<script src="{% static 'js/bank_search.js' %}"></script>
 {% endblock %}

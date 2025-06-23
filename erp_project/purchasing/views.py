@@ -1,12 +1,10 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, View
-from django.contrib import messages
-from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 import random
-from erp_project.accounts.utils import (
+from accounts.utils import (
     AdvancedListMixin,
     require_permission,
     user_has_permission,
@@ -29,7 +27,7 @@ from .utils import (
     validate_iban,
     validate_swift,
 )
-from erp_project.inventory.models import Product, Warehouse, ProductSerial
+from inventory.models import Product, Warehouse, ProductSerial
 
 
 class SupplierListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
@@ -168,7 +166,6 @@ class SupplierCreateView(LoginRequiredMixin, View):
             fail_silently=True,
         )
         log_action(request.user, 'create_supplier', details={'name': supplier.name}, company=request.user.company)
-        messages.success(request, 'Supplier added successfully')
         return redirect('supplier_detail', pk=supplier.pk)
 
 
@@ -192,10 +189,6 @@ class SupplierToggleView(LoginRequiredMixin, View):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
         supplier.is_connected = not supplier.is_connected
         supplier.save()
-        if supplier.is_connected:
-            messages.success(request, 'Supplier reactivated')
-        else:
-            messages.success(request, 'Supplier discontinued')
         return redirect('supplier_detail', pk=pk)
 
 
@@ -292,7 +285,6 @@ class SupplierUpdateView(LoginRequiredMixin, View):
             )
         supplier.save()
         log_action(request.user, 'update_supplier', details={'id': supplier.id}, company=request.user.company)
-        messages.success(request, 'Supplier updated successfully')
         return redirect('supplier_detail', pk=supplier.pk)
 
 
@@ -325,13 +317,6 @@ class SupplierRequestOTPView(LoginRequiredMixin, View):
             fail_silently=True,
         )
         return render(request, 'supplier_otp_modal.html', {'supplier': supplier})
-
-
-class BankSearchView(LoginRequiredMixin, View):
-    def get(self, request):
-        term = request.GET.get('q', '')
-        banks = Bank.objects.filter(name__icontains=term).order_by('name')[:10]
-        return JsonResponse(list(banks.values('name')), safe=False)
 
 
 @method_decorator(require_permission('add_purchaseorder'), name='dispatch')

@@ -18,8 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from erp_project.accounts.views import CustomLogoutView
-from erp_project.accounts.views import (
+from accounts.views import CustomLogoutView
+from accounts.views import (
     CustomLoginView, DashboardView, CompanyCreateView, CompanyListView,
     CompanyDetailView, CompanyUpdateView, UserListView, CompanyUserCreateView,
     UserDetailView, UserUpdateView, UserToggleActiveView, WhoAmIView, DashboardAPI,
@@ -46,15 +46,15 @@ urlpatterns = [
     path('roles/<int:pk>/edit/', RoleUpdateView.as_view(), name='role_edit'),
     path('audit-logs/', AuditLogListView.as_view(), name='audit_log_list'),
     path('audit-logs/<int:pk>/', AuditLogDetailView.as_view(), name='audit_log_detail'),
-    path('inventory/', include('erp_project.inventory.urls')),
-    path('purchasing/', include('erp_project.purchasing.urls')),
-    path('pos/', include('erp_project.pos.urls')),
+    path('inventory/', include('inventory.urls')),
+    path('purchasing/', include('purchasing.urls')),
+    path('pos/', include('pos.urls')),
     path('api/whoami/', WhoAmIView.as_view(), name='whoami'),
     path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
     path('', DashboardView.as_view(), name='dashboard'),
 ]
 
-from erp_project.accounts.views import permission_denied_view
+from accounts.views import permission_denied_view
 from django.urls import include
 handler403 = permission_denied_view
 

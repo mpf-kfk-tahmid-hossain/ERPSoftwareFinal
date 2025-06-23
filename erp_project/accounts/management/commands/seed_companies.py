@@ -1,7 +1,7 @@
 import random
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from erp_project.accounts.models import Company, Role, Permission, UserRole
+from accounts.models import Company, Role, Permission, UserRole
 from faker import Faker
 
 User = get_user_model()
