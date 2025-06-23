@@ -87,6 +87,8 @@ class SupplierCreateView(LoginRequiredMixin, View):
             elif not validate_swift(data['swift_code']):
                 errors.append('Invalid SWIFT code')
             else:
+                if Bank.objects.filter(swift_code=data['swift_code']).exclude(name=data['bank_name']).exists():
+                    errors.append('SWIFT code already used by another bank')
                 bank, created = Bank.objects.get_or_create(
                     name=data['bank_name'],
                     defaults={'swift_code': data['swift_code']},
