@@ -409,7 +409,7 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 * Input validation uses `phonenumbers` and `python-stdnum`.
 * Implemented OTP email verification on creation.
 * Suppliers can be toggled between connected and disconnected instead of deletion.
-* Supplier form suggests existing banks via datalist and enforces unique bank/SWIFT combinations and IBAN.
+* Supplier form uses a Select2 dropdown to search existing banks and allows typing a new name. It still enforces unique bank/SWIFT combinations and IBAN.
 * Supplier profile includes a description field and edit form.
 * Discontinue/reactivate suppliers with `can_discontinue_supplier` permission.
 * Updating phone or email triggers re-verification via OTP request.

@@ -398,4 +398,13 @@ class SupplierEnhancementTests(TestCase):
         })
         self.assertTrue(Bank.objects.filter(name='BrandNewBank').exists())
 
+    def test_supplier_form_uses_select2(self):
+        resp = self.client.get(reverse('supplier_add'))
+        self.assertContains(resp, 'select2')
+
+    def test_supplier_update_form_uses_select2(self):
+        supplier = Supplier.objects.create(name='S1', contact_person='CP', email='s1@example.com', phone='+10000000000', company=self.company)
+        resp = self.client.get(reverse('supplier_edit', args=[supplier.id]))
+        self.assertContains(resp, 'select2')
+
 

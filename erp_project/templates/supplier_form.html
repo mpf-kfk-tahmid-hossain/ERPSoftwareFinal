@@ -49,12 +49,11 @@
       </div>
       <div class="mb-3">
         <label for="id_bank_name" class="form-label">Bank</label>
-        <input list="bank-list" type="text" name="bank_name" id="id_bank_name" class="form-control" value="{{ bank_name }}" placeholder="Select or type new">
-        <datalist id="bank-list">
-          {% for b in banks %}
-          <option value="{{ b.name }}"></option>
-          {% endfor %}
-        </datalist>
+        <select name="bank_name" id="id_bank_name" class="form-select select2" data-placeholder="Select or type new">
+          {% if bank_name %}
+          <option value="{{ bank_name }}" selected>{{ bank_name }}</option>
+          {% endif %}
+        </select>
         {% if errors.bank_name %}<div class="text-danger">{{ errors.bank_name }}</div>{% endif %}
       </div>
       <div class="mb-3">
@@ -77,21 +76,20 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-const bankInput = document.getElementById('id_bank_name');
-const bankList = document.getElementById('bank-list');
-if (bankInput) {
-  bankInput.addEventListener('input', () => {
-    fetch('{% url "bank_search" %}?q=' + encodeURIComponent(bankInput.value))
-      .then(r => r.json())
-      .then(data => {
-        bankList.innerHTML = '';
-        data.forEach(item => {
-          const opt = document.createElement('option');
-          opt.value = item.name;
-          bankList.appendChild(opt);
-        });
-      });
+$(function() {
+  $('#id_bank_name').select2({
+    tags: true,
+    width: '100%',
+    ajax: {
+      url: '{% url "bank_search" %}',
+      dataType: 'json',
+      delay: 250,
+      data: params => ({q: params.term}),
+      processResults: data => ({results: data.map(item => ({id: item.name, text: item.name}))}),
+      cache: true
+    },
+    placeholder: 'Select or type new'
   });
-}
+});
 </script>
 {% endblock %}
