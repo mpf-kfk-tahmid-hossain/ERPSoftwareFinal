@@ -2,7 +2,14 @@
 {% block title %}Suppliers{% endblock %}
 {% block content %}
 <h2>Suppliers</h2>
-{% include 'includes/filter_form.html' %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    {% include 'includes/filter_form.html' %}
+  </div>
+  {% if can_add_supplier %}
+    <a class="btn btn-primary" href="{% url 'supplier_add' %}">Add Supplier</a>
+  {% endif %}
+</div>
 <table class="table">
   <thead>
     <tr>
@@ -24,7 +31,4 @@
   </tbody>
 </table>
 {% include 'includes/pagination.html' %}
-{% if can_add_supplier %}
-<a class="btn btn-primary" href="{% url 'supplier_add' %}">Add Supplier</a>
-{% endif %}
 {% endblock %}

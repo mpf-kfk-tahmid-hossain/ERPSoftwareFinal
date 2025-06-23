@@ -11,16 +11,37 @@
 <p><strong>Status:</strong> {% if supplier.is_connected %}Connected{% else %}Disconnected{% endif %}</p>
 <p><strong>Verified:</strong> {{ supplier.is_verified }}</p>
 {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-{% if can_verify %}
-<button class="btn btn-primary mb-3" hx-post="{% url 'supplier_request_otp' supplier.id %}" hx-target="body" hx-swap="afterbegin">Request OTP</button>
-{% endif %}
-{% if can_toggle %}
-<form method="post" action="{% url 'supplier_toggle' supplier.id %}" class="d-inline">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-warning">{% if supplier.is_connected %}Discontinue Supplier{% else %}Reactivate Supplier{% endif %}</button>
-</form>
-{% endif %}
-{% if can_toggle %}
-<a href="{% url 'supplier_edit' supplier.id %}" class="btn btn-secondary ms-2">Edit</a>
-{% endif %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  {% if can_verify %}
+    <button class="btn btn-primary"
+            hx-post="{% url 'supplier_request_otp' supplier.id %}"
+            hx-target="body"
+            hx-swap="afterbegin">
+      Request OTP
+    </button>
+  {% endif %}
+
+  {% if can_toggle %}
+    <form method="post"
+          action="{% url 'supplier_toggle' supplier.id %}"
+          class="d-inline m-0 p-0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning">
+        {% if supplier.is_connected %}
+          Discontinue Supplier
+        {% else %}
+          Reactivate Supplier
+        {% endif %}
+      </button>
+    </form>
+  {% endif %}
+
+  {% if can_toggle %}
+    <a href="{% url 'supplier_edit' supplier.id %}"
+       class="btn btn-secondary ms-2">
+      Edit
+    </a>
+  {% endif %}
+</div>
 {% endblock %}
+

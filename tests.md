@@ -38,3 +38,50 @@
 * [x] Enable **Sorting** (by name, date added, etc).
 
 ---
+
+Certainly! Here’s an **updated and organized checklist** reflecting all your requirements, in your preferred format:
+
+---
+
+### 📝 **Supplier Module & User Form Enhancement Checklist**
+
+#### **User Update Validation**
+
+* [ ] **Required Field Validation:**
+  When updating a user, if any required field is missing, a relevant validation error must be shown clearly on the screen.
+
+#### **Remove All `hx-post` Usage**
+
+* [ ] **Audit All Templates for `hx-post`:**
+  Check every Django template (especially supplier and user-related) to ensure `hx-post` is not used anywhere.
+* [ ] **Replace `hx-post` With Standard Django Forms/Buttons:**
+  All actions previously using `hx-post` must be replaced with proper HTML forms and Django POST endpoints.
+* [ ] **Automated/Manual Check:**
+  Implement a test or process to ensure no `hx-post` remains in the codebase.
+
+#### **Supplier Add/Edit: Bank Selection via AJAX**
+
+* [ ] **Bank Field Uses AJAX Search:**
+  The Add and Edit Supplier forms must allow users to search all existing banks with an AJAX-powered dropdown/search.
+* [ ] **Allow New Bank Entry:**
+  If the desired bank is not found, users can type a new name and it will be saved as a new Bank record.
+* [ ] **Bank Field Usability Test:**
+  Tests confirm that both searching and creating/selecting a new bank function as intended.
+
+#### **General UI & Form Handling**
+
+* [ ] **Inline Action Layouts:**
+  All supplier and user actions (e.g., edit, verify, discontinue) are laid out inline using Bootstrap flex utilities for proper alignment.
+* [ ] **Filter Form & Add Button Alignment:**
+  In supplier list views, the filter form should be left-aligned, and the “Add Supplier” button should be right-aligned on the same row.
+
+#### **Error & Success Feedback**
+
+* [ ] **Display Field-Level Validation Errors:**
+  All form errors (e.g., missing required fields) must display at the relevant field in the UI.
+* [ ] **Show Success Messages:**
+  Actions like adding, editing, or reactivating suppliers must display a clear success message.
+
+---
+
+Let me know if you want any part of this expanded, or need examples for any item!
