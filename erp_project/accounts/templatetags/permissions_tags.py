@@ -1,5 +1,5 @@
 from django import template
-from accounts.utils import user_has_permission
+from erp_project.accounts.utils import user_has_permission
 
 register = template.Library()
 

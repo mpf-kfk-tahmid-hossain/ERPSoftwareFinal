@@ -9,6 +9,7 @@ urlpatterns = [
     path('suppliers/<int:pk>/toggle/', views.SupplierToggleView.as_view(), name='supplier_toggle'),
     path('suppliers/<int:pk>/verify/', views.SupplierVerifyView.as_view(), name='supplier_verify'),
     path('suppliers/<int:pk>/request-otp/', views.SupplierRequestOTPView.as_view(), name='supplier_request_otp'),
+    path('banks/search/', views.BankSearchView.as_view(), name='bank_search'),
     path('purchase-orders/add/', views.PurchaseOrderCreateView.as_view(), name='purchase_order_add'),
     path('purchase-orders/<int:pk>/', views.PurchaseOrderDetailView.as_view(), name='purchase_order_detail'),
     path('purchase-orders/<int:po_id>/lines/<int:line_id>/receive/', views.GoodsReceiptCreateView.as_view(), name='goods_receipt_add'),

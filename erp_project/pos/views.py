@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from accounts.utils import require_permission
-from inventory.models import Product, ProductSerial
+from erp_project.accounts.utils import require_permission
+from erp_project.inventory.models import Product, ProductSerial
 
 
 @login_required

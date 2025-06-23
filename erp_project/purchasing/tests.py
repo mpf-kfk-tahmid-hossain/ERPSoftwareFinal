@@ -1,12 +1,12 @@
 from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from accounts.models import Company, Role, UserRole, Permission
-from inventory.models import (
+from erp_project.accounts.models import Company, Role, UserRole, Permission
+from erp_project.inventory.models import (
     ProductCategory, ProductUnit, Product, Warehouse,
     IdentifierType, ProductSerial, StockMovement
 )
-from ledger.models import LedgerAccount, LedgerEntry
+from erp_project.ledger.models import LedgerAccount, LedgerEntry
 from .models import Bank, Supplier, PurchaseOrder, PurchaseOrderLine, GoodsReceipt, Payment
 
 User = get_user_model()
@@ -31,7 +31,7 @@ class PurchasingLedgerTests(TestCase):
         # ledger accounts
         for code in ['Inventory', 'Supplier', 'Supplier Advance', 'Cash', 'Bank']:
             LedgerAccount.objects.create(code=code, name=code, company=self.company)
-        from ledger.utils import post_entry
+        from erp_project.ledger.utils import post_entry
         post_entry(self.company, 'open cash', [('Cash', 1000, 0)])
         self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
         # identifier types
@@ -106,7 +106,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
 
         for code in ['Inventory', 'Supplier', 'Supplier Advance', 'Cash', 'Bank']:
             LedgerAccount.objects.create(code=code, name=code, company=self.company)
-        from ledger.utils import post_entry
+        from erp_project.ledger.utils import post_entry
         post_entry(self.company, 'open cash', [('Cash', 1000, 0)])
         self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
 
@@ -382,5 +382,15 @@ class SupplierEnhancementTests(TestCase):
         self.assertNotContains(resp, 'BBB')
         resp = self.client.get(reverse('supplier_list'), {'is_connected': 'False'})
         self.assertContains(resp, 'BBB')
+
+    def test_bank_search_endpoint(self):
+        Bank.objects.create(name='AlphaBank', swift_code='ALPHA123')
+        resp = self.client.get(reverse('bank_search'), {'q': 'Alpha'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn({'name': 'AlphaBank'}, resp.json())
+
+    def test_supplier_form_has_ajax_datalist(self):
+        resp = self.client.get(reverse('supplier_add'))
+        self.assertContains(resp, 'id="bank-options"')
 
 
