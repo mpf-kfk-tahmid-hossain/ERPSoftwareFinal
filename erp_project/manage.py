@@ -6,7 +6,12 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_project.settings')
+    # The settings module lives under erp_project/erp_project.
+    # Use the full dotted path so tests and management commands
+    # load the correct configuration.
+    os.environ.setdefault(
+        'DJANGO_SETTINGS_MODULE', 'erp_project.erp_project.settings'
+    )
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
