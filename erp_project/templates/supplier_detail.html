@@ -2,6 +2,7 @@
 {% block title %}Supplier Detail{% endblock %}
 {% block content %}
 <h2>{{ supplier.name }}</h2>
+<p>{{ supplier.description }}</p>
 <p><strong>Contact:</strong> {{ supplier.contact_person }}</p>
 <p><strong>Phone:</strong> {{ supplier.phone }}</p>
 <p><strong>Email:</strong> {{ supplier.email }}</p>
@@ -11,18 +12,15 @@
 <p><strong>Verified:</strong> {{ supplier.is_verified }}</p>
 {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 {% if can_verify %}
-<form method="post" action="{% url 'supplier_verify' supplier.id %}" class="mb-3">
-  {% csrf_token %}
-  <div class="input-group">
-    <input type="text" name="otp" class="form-control" placeholder="Enter OTP" required>
-    <button type="submit" class="btn btn-primary">Verify</button>
-  </div>
-</form>
+<button class="btn btn-primary mb-3" hx-post="{% url 'supplier_request_otp' supplier.id %}" hx-target="body" hx-swap="afterbegin">Request OTP</button>
 {% endif %}
 {% if can_toggle %}
 <form method="post" action="{% url 'supplier_toggle' supplier.id %}" class="d-inline">
   {% csrf_token %}
-  <button type="submit" class="btn btn-warning">Toggle Connection</button>
+  <button type="submit" class="btn btn-warning">{% if supplier.is_connected %}Discontinue Supplier{% else %}Reactivate Supplier{% endif %}</button>
 </form>
+{% endif %}
+{% if can_toggle %}
+<a href="{% url 'supplier_edit' supplier.id %}" class="btn btn-secondary ms-2">Edit</a>
 {% endif %}
 {% endblock %}

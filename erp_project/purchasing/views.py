@@ -4,7 +4,12 @@ from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 import random
-from accounts.utils import require_permission, user_has_permission, log_action
+from accounts.utils import (
+    AdvancedListMixin,
+    require_permission,
+    user_has_permission,
+    log_action,
+)
 from .models import (
     Bank,
     Supplier,
@@ -25,13 +30,49 @@ from .utils import (
 from inventory.models import Product, Warehouse, ProductSerial
 
 
-class SupplierListView(LoginRequiredMixin, TemplateView):
+class SupplierListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'supplier_list.html'
+    model = Supplier
+    search_fields = ['name', 'contact_person', 'phone', 'email']
+    filter_fields = ['is_verified', 'is_connected']
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return Supplier.objects.filter(company=self.request.user.company)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        company = self.request.user.company
-        context['suppliers'] = Supplier.objects.filter(company=company)
+        page = self.get_queryset()
+        context['page_obj'] = page
+        context['search'] = True
+        context['filters'] = [
+            {
+                'name': 'is_verified',
+                'label': 'Verified',
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': 'True', 'label': 'Verified'},
+                    {'val': 'False', 'label': 'Unverified'},
+                ],
+                'current': self.request.GET.get('is_verified', ''),
+            },
+            {
+                'name': 'is_connected',
+                'label': 'Status',
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': 'True', 'label': 'Active'},
+                    {'val': 'False', 'label': 'Discontinued'},
+                ],
+                'current': self.request.GET.get('is_connected', ''),
+            },
+        ]
+        context['sort_options'] = [
+            ('name', 'Name'),
+            ('contact_person', 'Contact'),
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
         context['can_add_supplier'] = user_has_permission(self.request.user, 'add_supplier')
         return context
 
@@ -41,6 +82,7 @@ class SupplierCreateView(LoginRequiredMixin, View):
     def get(self, request):
         context = {
             'name': '',
+            'description': '',
             'contact_person': '',
             'phone': '',
             'email': '',
@@ -57,6 +99,7 @@ class SupplierCreateView(LoginRequiredMixin, View):
     def post(self, request):
         fields = ['name', 'contact_person', 'phone', 'email', 'trade_license_number', 'trn', 'iban', 'bank_name', 'swift_code', 'address']
         data = {f: request.POST.get(f, '').strip() for f in fields}
+        data['description'] = request.POST.get('description', '').strip()
         errors = []
         if not data['name']:
             errors.append('Name required')
@@ -102,6 +145,7 @@ class SupplierCreateView(LoginRequiredMixin, View):
 
         supplier = Supplier.objects.create(
             name=data['name'],
+            description=data['description'],
             contact_person=data['contact_person'],
             phone=data['phone'],
             email=data['email'],
@@ -134,18 +178,114 @@ class SupplierDetailView(LoginRequiredMixin, TemplateView):
         supplier = get_object_or_404(Supplier, pk=self.kwargs['pk'], company=self.request.user.company)
         context['supplier'] = supplier
         context['bank'] = supplier.bank
-        context['can_toggle'] = user_has_permission(self.request.user, 'change_supplier')
+        context['can_toggle'] = user_has_permission(self.request.user, 'can_discontinue_supplier')
         context['can_verify'] = not supplier.is_verified
         return context
 
 
-@method_decorator(require_permission('change_supplier'), name='dispatch')
+@method_decorator(require_permission('can_discontinue_supplier'), name='dispatch')
 class SupplierToggleView(LoginRequiredMixin, View):
     def post(self, request, pk):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
         supplier.is_connected = not supplier.is_connected
         supplier.save()
         return redirect('supplier_detail', pk=pk)
+
+
+@method_decorator(require_permission('change_supplier'), name='dispatch')
+class SupplierUpdateView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
+        context = {
+            'name': supplier.name,
+            'description': supplier.description,
+            'contact_person': supplier.contact_person,
+            'phone': supplier.phone or '',
+            'email': supplier.email or '',
+            'trade_license_number': supplier.trade_license_number or '',
+            'trn': supplier.trn or '',
+            'iban': supplier.iban or '',
+            'bank_name': supplier.bank.name if supplier.bank else '',
+            'swift_code': supplier.bank.swift_code if supplier.bank else '',
+            'address': supplier.address,
+            'banks': Bank.objects.all(),
+            'supplier': supplier,
+        }
+        return render(request, 'supplier_update_form.html', context)
+
+    def post(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
+        fields = ['name', 'contact_person', 'phone', 'email', 'trade_license_number', 'trn', 'iban', 'bank_name', 'swift_code', 'address', 'description']
+        data = {f: request.POST.get(f, '').strip() for f in fields}
+        errors = []
+        if not data['name']:
+            errors.append('Name required')
+        if not data['contact_person']:
+            errors.append('Contact person required')
+        if data['phone'] and not validate_phone(data['phone']):
+            errors.append('Invalid phone number')
+        if data['email'] and Supplier.objects.filter(email=data['email']).exclude(pk=supplier.pk).exists():
+            errors.append('Email already exists')
+        if data['phone'] and Supplier.objects.filter(phone=data['phone']).exclude(pk=supplier.pk).exists():
+            errors.append('Phone already exists')
+        if data['trade_license_number'] and not validate_trade_license(data['trade_license_number']):
+            errors.append('Invalid trade license number')
+        if data['trade_license_number'] and Supplier.objects.filter(trade_license_number=data['trade_license_number']).exclude(pk=supplier.pk).exists():
+            errors.append('Trade license number exists')
+        if data['trn'] and not validate_trn(data['trn']):
+            errors.append('Invalid TRN')
+        if data['trn'] and Supplier.objects.filter(trn=data['trn']).exclude(pk=supplier.pk).exists():
+            errors.append('TRN exists')
+        if data['iban'] and not validate_iban(data['iban']):
+            errors.append('Invalid IBAN')
+        if data['iban'] and Supplier.objects.filter(iban=data['iban']).exclude(pk=supplier.pk).exists():
+            errors.append('IBAN exists')
+        bank = None
+        if data['bank_name'] or data['swift_code']:
+            if not data['bank_name'] or not data['swift_code']:
+                errors.append('Bank name and SWIFT required together')
+            elif not validate_swift(data['swift_code']):
+                errors.append('Invalid SWIFT code')
+            else:
+                if Bank.objects.filter(swift_code=data['swift_code']).exclude(name=data['bank_name']).exists():
+                    errors.append('SWIFT code already used by another bank')
+                bank, created = Bank.objects.get_or_create(
+                    name=data['bank_name'],
+                    defaults={'swift_code': data['swift_code']},
+                )
+                if not created and bank.swift_code != data['swift_code']:
+                    errors.append('Bank exists with different SWIFT code')
+        if errors:
+            data['error'] = '; '.join(errors)
+            data['banks'] = Bank.objects.all()
+            data['supplier'] = supplier
+            return render(request, 'supplier_update_form.html', data)
+
+        changed_contact = data['email'] != (supplier.email or '') or data['phone'] != (supplier.phone or '')
+        supplier.name = data['name']
+        supplier.description = data['description']
+        supplier.contact_person = data['contact_person']
+        supplier.phone = data['phone'] or None
+        supplier.email = data['email'] or None
+        supplier.trade_license_number = data['trade_license_number'] or None
+        supplier.trn = data['trn'] or None
+        supplier.iban = data['iban'] or None
+        supplier.bank = bank
+        supplier.address = data['address']
+        if changed_contact:
+            supplier.is_verified = False
+            code = f"{random.randint(100000, 999999)}"
+            SupplierOTP.objects.create(supplier=supplier, code=code)
+            send_mail(
+                'Supplier Verification',
+                f'Your verification code is {code}',
+                'noreply@example.com',
+                [supplier.email],
+                fail_silently=True,
+            )
+        supplier.save()
+        log_action(request.user, 'update_supplier', details={'id': supplier.id}, company=request.user.company)
+        return redirect('supplier_detail', pk=supplier.pk)
 
 
 @method_decorator(require_permission('change_supplier'), name='dispatch')
@@ -160,7 +300,23 @@ class SupplierVerifyView(LoginRequiredMixin, View):
             otp.is_used = True
             otp.save()
             return redirect('supplier_detail', pk=pk)
-        return render(request, 'supplier_detail.html', {'supplier': supplier, 'error': 'Invalid OTP', 'can_toggle': user_has_permission(request.user, 'change_supplier'), 'can_verify': True})
+        return render(request, 'supplier_detail.html', {'supplier': supplier, 'error': 'Invalid OTP', 'can_toggle': user_has_permission(request.user, 'can_discontinue_supplier'), 'can_verify': True})
+
+
+@method_decorator(require_permission('change_supplier'), name='dispatch')
+class SupplierRequestOTPView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
+        code = f"{random.randint(100000, 999999)}"
+        SupplierOTP.objects.create(supplier=supplier, code=code)
+        send_mail(
+            'Supplier Verification',
+            f'Your verification code is {code}',
+            'noreply@example.com',
+            [supplier.email],
+            fail_silently=True,
+        )
+        return render(request, 'supplier_otp_modal.html', {'supplier': supplier})
 
 
 @method_decorator(require_permission('add_purchaseorder'), name='dispatch')

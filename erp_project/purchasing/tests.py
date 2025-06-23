@@ -309,3 +309,78 @@ class PosScanTests(TestCase):
         self.assertContains(resp, 'Item')
 
 
+class SupplierEnhancementTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='SupCo', code='SC')
+        self.user = User.objects.create_user(username='sup', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = [
+            'add_supplier', 'change_supplier', 'view_supplier',
+            'can_discontinue_supplier',
+        ]
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='sup', password='pass')
+        self.bank = Bank.objects.create(name='TestBank', swift_code='TESTBANK')
+
+    def test_create_with_description(self):
+        url = reverse('supplier_add')
+        self.client.post(url, {
+            'name': 'ACME',
+            'description': 'Widgets',
+            'contact_person': 'Bob',
+            'phone': '+14155550123',
+            'email': 'acme@example.com',
+            'trade_license_number': '',
+            'trn': '',
+            'iban': '',
+            'bank_name': 'TestBank',
+            'swift_code': 'TESTBANK',
+            'address': 'A',
+        })
+        supplier = Supplier.objects.get(name='ACME')
+        self.assertEqual(supplier.description, 'Widgets')
+
+    def test_update_email_triggers_verification(self):
+        supplier = Supplier.objects.create(name='ACME', description='', contact_person='CP', email='a@x.com', phone='+14155550110', company=self.company, bank=self.bank, is_verified=True)
+        url = reverse('supplier_edit', args=[supplier.id])
+        resp = self.client.post(url, {
+            'name': 'ACME',
+            'description': '',
+            'contact_person': 'CP',
+            'phone': '+14155550111',
+            'email': 'new@example.com',
+            'trade_license_number': '',
+            'trn': '',
+            'iban': '',
+            'bank_name': 'TestBank',
+            'swift_code': 'TESTBANK',
+            'address': 'A',
+        })
+        self.assertEqual(resp.status_code, 302)
+        supplier.refresh_from_db()
+        self.assertFalse(supplier.is_verified)
+        self.assertEqual(supplier.otps.count(), 1)
+
+    def test_toggle_requires_permission(self):
+        supplier = Supplier.objects.create(name='X', contact_person='CP', company=self.company)
+        # remove permission
+        role = Role.objects.get(name='Admin')
+        perm = Permission.objects.get(codename='can_discontinue_supplier')
+        role.permissions.remove(perm)
+        url = reverse('supplier_toggle', args=[supplier.id])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_list_search_filter_sort(self):
+        Supplier.objects.create(name='AAA', contact_person='c1', company=self.company)
+        Supplier.objects.create(name='BBB', contact_person='c2', company=self.company, is_connected=False)
+        resp = self.client.get(reverse('supplier_list'), {'q': 'AAA'})
+        self.assertContains(resp, 'AAA')
+        self.assertNotContains(resp, 'BBB')
+        resp = self.client.get(reverse('supplier_list'), {'is_connected': 'False'})
+        self.assertContains(resp, 'BBB')
+
+

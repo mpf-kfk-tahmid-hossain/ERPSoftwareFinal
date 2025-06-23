@@ -2,17 +2,28 @@
 {% block title %}Suppliers{% endblock %}
 {% block content %}
 <h2>Suppliers</h2>
+{% include 'includes/filter_form.html' %}
 <table class="table">
-  <tr><th>Name</th><th>Phone</th><th>Email</th><th>Status</th></tr>
-  {% for s in suppliers %}
-  <tr>
-    <td><a href="{% url 'supplier_detail' s.id %}">{{ s.name }}</a></td>
-    <td>{{ s.phone }}</td>
-    <td>{{ s.email }}</td>
-    <td>{% if s.is_connected %}Connected{% else %}Disconnected{% endif %}</td>
-  </tr>
-  {% endfor %}
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in page_obj %}
+    <tr>
+      <td><a href="{% url 'supplier_detail' s.id %}">{{ s.name }}</a></td>
+      <td>{{ s.phone }}</td>
+      <td>{{ s.email }}</td>
+      <td>{% if s.is_connected %}Active{% else %}Discontinued{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+{% include 'includes/pagination.html' %}
 {% if can_add_supplier %}
 <a class="btn btn-primary" href="{% url 'supplier_add' %}">Add Supplier</a>
 {% endif %}
