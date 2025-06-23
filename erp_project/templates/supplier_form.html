@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}Add Supplier{% endblock %}
+{% block title %}{{ title|default:'Add Supplier' }}{% endblock %}
 {% block content %}
-<h2>Add Supplier</h2>
+<h2>{{ title|default:'Add Supplier' }}</h2>
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
   <div class="row g-3">
