@@ -61,16 +61,18 @@
   </div>
 </div>
 {% endif %}
-{% if can_edit %}
-<a href="{% url 'user_edit' target.id %}" class="btn btn-primary">Edit</a>
-{% endif %}
-  {% if can_change_password %}
-  <a href="{% url 'user_change_password' target.id %}" class="btn btn-secondary">Change Password</a>
+<div class="d-flex gap-2 mb-3">
+  {% if can_edit %}
+    <a href="{% url 'user_edit' target.id %}" class="btn btn-primary">Edit</a>
   {% endif %}
-{% if can_toggle %}
-<form method="post" action="{% url 'user_toggle' target.id %}" class="d-inline">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-warning">{% if target.is_active %}Deactivate{% else %}Reactivate{% endif %}</button>
-</form>
-{% endif %}
+  {% if can_change_password %}
+    <a href="{% url 'user_change_password' target.id %}" class="btn btn-secondary">Change Password</a>
+  {% endif %}
+  {% if can_toggle %}
+    <form method="post" action="{% url 'user_toggle' target.id %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning">{% if target.is_active %}Deactivate{% else %}Reactivate{% endif %}</button>
+    </form>
+  {% endif %}
+</div>
 {% endblock %}

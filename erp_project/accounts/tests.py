@@ -58,6 +58,27 @@ class OnboardingTests(TestCase):
         follow_up = self.client.get(reverse('dashboard'))
         self.assertEqual(follow_up.status_code, 302)
 
+
+class UserUpdateValidationTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='ValCo', code='VC')
+        role = Role.objects.get(name='Admin')
+        perm, _ = Permission.objects.get_or_create(codename='change_user')
+        role.permissions.add(perm)
+        self.user = User.objects.create_user(username='valuser', password='pass', company=self.company)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='valuser', password='pass')
+
+    def test_update_user_missing_username_shows_error(self):
+        resp = self.client.post(reverse('user_edit', args=[self.user.id]), {
+            'username': '',
+            'email': 'test@example.com',
+            'first_name': '',
+            'last_name': '',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'This field is required')
+
 class PermissionTests(TestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username='admin', password='pass')

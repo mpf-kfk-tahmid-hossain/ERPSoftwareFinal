@@ -13,4 +13,5 @@ urlpatterns = [
     path('purchase-orders/<int:pk>/', views.PurchaseOrderDetailView.as_view(), name='purchase_order_detail'),
     path('purchase-orders/<int:po_id>/lines/<int:line_id>/receive/', views.GoodsReceiptCreateView.as_view(), name='goods_receipt_add'),
     path('quotations/add/', views.QuotationRequestCreateView.as_view(), name='quotation_add'),
+    path('banks/search/', views.BankSearchView.as_view(), name='bank_search'),
 ]
