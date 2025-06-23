@@ -83,6 +83,7 @@ class SupplierListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
 class SupplierCreateView(LoginRequiredMixin, View):
     def get(self, request):
         context = {
+            'title': 'Add Supplier',
             'name': '',
             'description': '',
             'contact_person': '',
@@ -143,6 +144,7 @@ class SupplierCreateView(LoginRequiredMixin, View):
         if errors:
             data['errors'] = errors
             data['banks'] = Bank.objects.all()
+            data['title'] = 'Add Supplier'
             return render(request, 'supplier_form.html', data)
 
         supplier = Supplier.objects.create(
@@ -206,6 +208,7 @@ class SupplierUpdateView(LoginRequiredMixin, View):
     def get(self, request, pk):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
         context = {
+            'title': 'Update Supplier',
             'name': supplier.name,
             'description': supplier.description,
             'contact_person': supplier.contact_person,
@@ -220,7 +223,7 @@ class SupplierUpdateView(LoginRequiredMixin, View):
             'banks': Bank.objects.all(),
             'supplier': supplier,
         }
-        return render(request, 'supplier_update_form.html', context)
+        return render(request, 'supplier_form.html', context)
 
     def post(self, request, pk):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
@@ -268,7 +271,8 @@ class SupplierUpdateView(LoginRequiredMixin, View):
             data['errors'] = errors
             data['banks'] = Bank.objects.all()
             data['supplier'] = supplier
-            return render(request, 'supplier_update_form.html', data)
+            data['title'] = 'Update Supplier'
+            return render(request, 'supplier_form.html', data)
 
         changed_contact = data['email'] != (supplier.email or '') or data['phone'] != (supplier.phone or '')
         supplier.name = data['name']
