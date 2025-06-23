@@ -414,5 +414,8 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 * Discontinue/reactivate suppliers with `can_discontinue_supplier` permission.
 * Updating phone or email triggers re-verification via OTP request.
 * Supplier list now supports search, filters, pagination and sorting.
+* Bank field now loads suggestions via AJAX and allows new bank entry.
+* User update form validates required fields and displays success messages.
+* All hx-post usage removed in templates.
 
 ---

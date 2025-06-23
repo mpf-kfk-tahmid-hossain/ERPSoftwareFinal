@@ -251,7 +251,7 @@ class PasswordChangeTests(TestCase):
             reverse('user_change_password', args=[self.other.id]),
             {'password1': 'x2', 'password2': 'x2'},
         )
-        from accounts.models import AuditLog
+        from erp_project.accounts.models import AuditLog
         self.assertTrue(AuditLog.objects.filter(actor=self.user, target_user=self.other, action='password_change').exists())
 
 
@@ -354,7 +354,7 @@ class AuditMiddlewareTests(TestCase):
 
     def test_login_and_logout_logged(self):
         self.client.post(reverse('login'), {'username': 'auditor', 'password': 'pass'})
-        from accounts.models import AuditLog
+        from erp_project.accounts.models import AuditLog
         log = AuditLog.objects.get(actor=self.user, action='login')
         self.assertEqual(log.request_type, 'POST')
         self.assertEqual(log.company, self.user.company)
@@ -637,6 +637,28 @@ class TemplatePermissionFilterTests(TestCase):
             with self.subTest(template=tpl.name):
                 content = tpl.read_text()
                 self.assertNotIn('|has_permission', content)
+
+
+class UserUpdateValidationTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='ValCo', code='VC', address='')
+        self.user = User.objects.create_user(username='val', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perm = Permission.objects.get_or_create(codename='change_user')[0]
+        role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='val', password='pass')
+
+    def test_update_requires_required_fields(self):
+        resp = self.client.post(reverse('user_edit', args=[self.user.id]), {
+            'username': '',
+            'email': '',
+            'first_name': '',
+            'last_name': '',
+            'current_password': 'pass'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'This field is required')
 
 
 

@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Company
+from erp_project.accounts.models import Company
 
 
 class Warehouse(models.Model):
