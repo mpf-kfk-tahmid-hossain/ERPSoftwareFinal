@@ -383,4 +383,19 @@ class SupplierEnhancementTests(TestCase):
         resp = self.client.get(reverse('supplier_list'), {'is_connected': 'False'})
         self.assertContains(resp, 'BBB')
 
+    def test_bank_ajax_search_and_create(self):
+        Bank.objects.create(name='AjaxBank', swift_code='AJAX12345')
+        resp = self.client.get(reverse('bank_search'), {'q': 'Ajax'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('AjaxBank', resp.json()[0]['name'])
+        # create supplier with new bank
+        self.client.post(reverse('supplier_add'), {
+            'name': 'NewSup',
+            'contact_person': 'CP',
+            'email': 'n@e.com',
+            'bank_name': 'BrandNewBank',
+            'swift_code': 'BRAND123',
+        })
+        self.assertTrue(Bank.objects.filter(name='BrandNewBank').exists())
+
 

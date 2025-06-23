@@ -9,10 +9,12 @@
       <div class="mb-3">
         <label for="id_name" class="form-label">Name</label>
         <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
+        {% if errors.name %}<div class="text-danger">{{ errors.name }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_contact_person" class="form-label">Contact Person</label>
         <input type="text" name="contact_person" id="id_contact_person" class="form-control" value="{{ contact_person }}" required>
+        {% if errors.contact_person %}<div class="text-danger">{{ errors.contact_person }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_description" class="form-label">Description</label>
@@ -21,24 +23,29 @@
       <div class="mb-3">
         <label for="id_phone" class="form-label">Phone</label>
         <input type="text" name="phone" id="id_phone" class="form-control" value="{{ phone }}">
+        {% if errors.phone %}<div class="text-danger">{{ errors.phone }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_email" class="form-label">Email</label>
         <input type="email" name="email" id="id_email" class="form-control" value="{{ email }}" required>
+        {% if errors.email %}<div class="text-danger">{{ errors.email }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_address" class="form-label">Address</label>
         <textarea name="address" id="id_address" class="form-control">{{ address }}</textarea>
+        {% if errors.address %}<div class="text-danger">{{ errors.address }}</div>{% endif %}
       </div>
     </div>
     <div class="col-md-6">
       <div class="mb-3">
         <label for="id_trade_license_number" class="form-label">Trade License</label>
         <input type="text" name="trade_license_number" id="id_trade_license_number" class="form-control" value="{{ trade_license_number }}">
+        {% if errors.trade_license_number %}<div class="text-danger">{{ errors.trade_license_number }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_trn" class="form-label">TRN</label>
         <input type="text" name="trn" id="id_trn" class="form-control" value="{{ trn }}">
+        {% if errors.trn %}<div class="text-danger">{{ errors.trn }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_bank_name" class="form-label">Bank</label>
@@ -48,14 +55,17 @@
           <option value="{{ b.name }}"></option>
           {% endfor %}
         </datalist>
+        {% if errors.bank_name %}<div class="text-danger">{{ errors.bank_name }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_iban" class="form-label">IBAN</label>
         <input type="text" name="iban" id="id_iban" class="form-control" value="{{ iban }}">
+        {% if errors.iban %}<div class="text-danger">{{ errors.iban }}</div>{% endif %}
       </div>
       <div class="mb-3">
         <label for="id_swift_code" class="form-label">SWIFT</label>
         <input type="text" name="swift_code" id="id_swift_code" class="form-control" value="{{ swift_code }}">
+        {% if errors.swift_code %}<div class="text-danger">{{ errors.swift_code }}</div>{% endif %}
       </div>
     </div>
     <div class="col-12">
@@ -64,4 +74,24 @@
     </div>
   </div>
 </form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const bankInput = document.getElementById('id_bank_name');
+const bankList = document.getElementById('bank-list');
+if (bankInput) {
+  bankInput.addEventListener('input', () => {
+    fetch('{% url "bank_search" %}?q=' + encodeURIComponent(bankInput.value))
+      .then(r => r.json())
+      .then(data => {
+        bankList.innerHTML = '';
+        data.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.name;
+          bankList.appendChild(opt);
+        });
+      });
+  });
+}
+</script>
 {% endblock %}

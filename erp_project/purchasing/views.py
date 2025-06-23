@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
+from django.contrib import messages
 import random
 from accounts.utils import (
     AdvancedListMixin,
@@ -28,6 +29,7 @@ from .utils import (
     validate_swift,
 )
 from inventory.models import Product, Warehouse, ProductSerial
+from django.http import JsonResponse
 
 
 class SupplierListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
@@ -100,46 +102,46 @@ class SupplierCreateView(LoginRequiredMixin, View):
         fields = ['name', 'contact_person', 'phone', 'email', 'trade_license_number', 'trn', 'iban', 'bank_name', 'swift_code', 'address']
         data = {f: request.POST.get(f, '').strip() for f in fields}
         data['description'] = request.POST.get('description', '').strip()
-        errors = []
+        errors = {}
         if not data['name']:
-            errors.append('Name required')
+            errors['name'] = 'Name required'
         if not data['contact_person']:
-            errors.append('Contact person required')
+            errors['contact_person'] = 'Contact person required'
         if data['phone'] and not validate_phone(data['phone']):
-            errors.append('Invalid phone number')
+            errors['phone'] = 'Invalid phone number'
         if Supplier.objects.filter(email=data['email']).exists():
-            errors.append('Email already exists')
+            errors['email'] = 'Email already exists'
         if data['phone'] and Supplier.objects.filter(phone=data['phone']).exists():
-            errors.append('Phone already exists')
+            errors['phone'] = 'Phone already exists'
         if data['trade_license_number'] and not validate_trade_license(data['trade_license_number']):
-            errors.append('Invalid trade license number')
+            errors['trade_license_number'] = 'Invalid trade license number'
         if data['trade_license_number'] and Supplier.objects.filter(trade_license_number=data['trade_license_number']).exists():
-            errors.append('Trade license number exists')
+            errors['trade_license_number'] = 'Trade license number exists'
         if data['trn'] and not validate_trn(data['trn']):
-            errors.append('Invalid TRN')
+            errors['trn'] = 'Invalid TRN'
         if data['trn'] and Supplier.objects.filter(trn=data['trn']).exists():
-            errors.append('TRN exists')
+            errors['trn'] = 'TRN exists'
         if data['iban'] and not validate_iban(data['iban']):
-            errors.append('Invalid IBAN')
+            errors['iban'] = 'Invalid IBAN'
         if data['iban'] and Supplier.objects.filter(iban=data['iban']).exists():
-            errors.append('IBAN exists')
+            errors['iban'] = 'IBAN exists'
         bank = None
         if data['bank_name'] or data['swift_code']:
             if not data['bank_name'] or not data['swift_code']:
-                errors.append('Bank name and SWIFT required together')
+                errors['bank_name'] = 'Bank name and SWIFT required together'
             elif not validate_swift(data['swift_code']):
-                errors.append('Invalid SWIFT code')
+                errors['swift_code'] = 'Invalid SWIFT code'
             else:
                 if Bank.objects.filter(swift_code=data['swift_code']).exclude(name=data['bank_name']).exists():
-                    errors.append('SWIFT code already used by another bank')
+                    errors['swift_code'] = 'SWIFT code already used by another bank'
                 bank, created = Bank.objects.get_or_create(
                     name=data['bank_name'],
                     defaults={'swift_code': data['swift_code']},
                 )
                 if not created and bank.swift_code != data['swift_code']:
-                    errors.append('Bank exists with different SWIFT code')
+                    errors['swift_code'] = 'Bank exists with different SWIFT code'
         if errors:
-            data['error'] = '; '.join(errors)
+            data['errors'] = errors
             data['banks'] = Bank.objects.all()
             return render(request, 'supplier_form.html', data)
 
@@ -166,6 +168,7 @@ class SupplierCreateView(LoginRequiredMixin, View):
             fail_silently=True,
         )
         log_action(request.user, 'create_supplier', details={'name': supplier.name}, company=request.user.company)
+        messages.success(request, 'Supplier added successfully')
         return redirect('supplier_detail', pk=supplier.pk)
 
 
@@ -180,6 +183,8 @@ class SupplierDetailView(LoginRequiredMixin, TemplateView):
         context['bank'] = supplier.bank
         context['can_toggle'] = user_has_permission(self.request.user, 'can_discontinue_supplier')
         context['can_verify'] = not supplier.is_verified
+        show = self.request.session.pop('show_otp_for', None)
+        context['show_otp_modal'] = show == supplier.id
         return context
 
 
@@ -189,6 +194,10 @@ class SupplierToggleView(LoginRequiredMixin, View):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
         supplier.is_connected = not supplier.is_connected
         supplier.save()
+        if supplier.is_connected:
+            messages.success(request, 'Supplier reactivated successfully')
+        else:
+            messages.success(request, 'Supplier discontinued successfully')
         return redirect('supplier_detail', pk=pk)
 
 
@@ -217,46 +226,46 @@ class SupplierUpdateView(LoginRequiredMixin, View):
         supplier = get_object_or_404(Supplier, pk=pk, company=request.user.company)
         fields = ['name', 'contact_person', 'phone', 'email', 'trade_license_number', 'trn', 'iban', 'bank_name', 'swift_code', 'address', 'description']
         data = {f: request.POST.get(f, '').strip() for f in fields}
-        errors = []
+        errors = {}
         if not data['name']:
-            errors.append('Name required')
+            errors['name'] = 'Name required'
         if not data['contact_person']:
-            errors.append('Contact person required')
+            errors['contact_person'] = 'Contact person required'
         if data['phone'] and not validate_phone(data['phone']):
-            errors.append('Invalid phone number')
+            errors['phone'] = 'Invalid phone number'
         if data['email'] and Supplier.objects.filter(email=data['email']).exclude(pk=supplier.pk).exists():
-            errors.append('Email already exists')
+            errors['email'] = 'Email already exists'
         if data['phone'] and Supplier.objects.filter(phone=data['phone']).exclude(pk=supplier.pk).exists():
-            errors.append('Phone already exists')
+            errors['phone'] = 'Phone already exists'
         if data['trade_license_number'] and not validate_trade_license(data['trade_license_number']):
-            errors.append('Invalid trade license number')
+            errors['trade_license_number'] = 'Invalid trade license number'
         if data['trade_license_number'] and Supplier.objects.filter(trade_license_number=data['trade_license_number']).exclude(pk=supplier.pk).exists():
-            errors.append('Trade license number exists')
+            errors['trade_license_number'] = 'Trade license number exists'
         if data['trn'] and not validate_trn(data['trn']):
-            errors.append('Invalid TRN')
+            errors['trn'] = 'Invalid TRN'
         if data['trn'] and Supplier.objects.filter(trn=data['trn']).exclude(pk=supplier.pk).exists():
-            errors.append('TRN exists')
+            errors['trn'] = 'TRN exists'
         if data['iban'] and not validate_iban(data['iban']):
-            errors.append('Invalid IBAN')
+            errors['iban'] = 'Invalid IBAN'
         if data['iban'] and Supplier.objects.filter(iban=data['iban']).exclude(pk=supplier.pk).exists():
-            errors.append('IBAN exists')
+            errors['iban'] = 'IBAN exists'
         bank = None
         if data['bank_name'] or data['swift_code']:
             if not data['bank_name'] or not data['swift_code']:
-                errors.append('Bank name and SWIFT required together')
+                errors['bank_name'] = 'Bank name and SWIFT required together'
             elif not validate_swift(data['swift_code']):
-                errors.append('Invalid SWIFT code')
+                errors['swift_code'] = 'Invalid SWIFT code'
             else:
                 if Bank.objects.filter(swift_code=data['swift_code']).exclude(name=data['bank_name']).exists():
-                    errors.append('SWIFT code already used by another bank')
+                    errors['swift_code'] = 'SWIFT code already used by another bank'
                 bank, created = Bank.objects.get_or_create(
                     name=data['bank_name'],
                     defaults={'swift_code': data['swift_code']},
                 )
                 if not created and bank.swift_code != data['swift_code']:
-                    errors.append('Bank exists with different SWIFT code')
+                    errors['swift_code'] = 'Bank exists with different SWIFT code'
         if errors:
-            data['error'] = '; '.join(errors)
+            data['errors'] = errors
             data['banks'] = Bank.objects.all()
             data['supplier'] = supplier
             return render(request, 'supplier_update_form.html', data)
@@ -285,6 +294,7 @@ class SupplierUpdateView(LoginRequiredMixin, View):
             )
         supplier.save()
         log_action(request.user, 'update_supplier', details={'id': supplier.id}, company=request.user.company)
+        messages.success(request, 'Supplier updated successfully')
         return redirect('supplier_detail', pk=supplier.pk)
 
 
@@ -316,7 +326,9 @@ class SupplierRequestOTPView(LoginRequiredMixin, View):
             [supplier.email],
             fail_silently=True,
         )
-        return render(request, 'supplier_otp_modal.html', {'supplier': supplier})
+        request.session['show_otp_for'] = supplier.id
+        messages.success(request, 'OTP sent to supplier')
+        return redirect('supplier_detail', pk=pk)
 
 
 @method_decorator(require_permission('add_purchaseorder'), name='dispatch')
@@ -474,3 +486,13 @@ class QuotationRequestCreateView(LoginRequiredMixin, View):
         )
         log_action(request.user, 'create_quotation', details={'number': number}, company=request.user.company)
         return redirect('purchase_order_add')
+
+
+class BankSearchView(LoginRequiredMixin, View):
+    """Return bank names matching a query for AJAX search."""
+
+    def get(self, request):
+        q = request.GET.get('q', '')
+        banks = Bank.objects.filter(name__icontains=q)[:10]
+        data = [{'name': b.name} for b in banks]
+        return JsonResponse(data, safe=False)
