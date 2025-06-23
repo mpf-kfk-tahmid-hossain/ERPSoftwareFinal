@@ -49,7 +49,7 @@
       </div>
       <div class="mb-3">
         <label for="id_bank_name" class="form-label">Bank</label>
-        <select name="bank_name" id="id_bank_name" class="form-select select2" data-placeholder="Select or type new">
+        <select name="bank_name" id="id_bank_name" class="form-select select2 w-100" data-placeholder="Select or type new">
           {% if bank_name %}
           <option value="{{ bank_name }}" selected>{{ bank_name }}</option>
           {% endif %}
@@ -78,6 +78,7 @@
 <script>
 $(function() {
   $('#id_bank_name').select2({
+    theme: 'bootstrap-5',
     tags: true,
     width: '100%',
     ajax: {
@@ -85,10 +86,13 @@ $(function() {
       dataType: 'json',
       delay: 250,
       data: params => ({q: params.term}),
-      processResults: data => ({results: data.map(item => ({id: item.name, text: item.name}))}),
+      processResults: data => ({
+        results: data.map(item => ({id: item.name, text: item.name}))
+      }),
       cache: true
     },
-    placeholder: 'Select or type new'
+    placeholder: $('#id_bank_name').data('placeholder'),
+    allowClear: true
   });
 });
 </script>
