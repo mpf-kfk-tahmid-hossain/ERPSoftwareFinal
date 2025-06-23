@@ -4,11 +4,11 @@ from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
 from django.db.models import Sum
-from erp_project.accounts.utils import user_has_permission
+from accounts.utils import user_has_permission
 
-from erp_project.accounts.models import UserRole
+from accounts.models import UserRole
 
-from erp_project.accounts.utils import AdvancedListMixin, require_permission, log_action
+from accounts.utils import AdvancedListMixin, require_permission, log_action
 from .models import (
     Warehouse,
     ProductCategory,

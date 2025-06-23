@@ -1,5 +1,5 @@
 from django.db import models
-from erp_project.accounts.models import Company
+from accounts.models import Company
 
 
 class LedgerAccount(models.Model):

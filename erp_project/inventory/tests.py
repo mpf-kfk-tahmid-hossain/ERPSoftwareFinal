@@ -1,7 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from erp_project.accounts.models import Company, Role, UserRole, Permission, AuditLog
+from accounts.models import Company, Role, UserRole, Permission, AuditLog
 from .models import (
     Warehouse,
     ProductCategory,

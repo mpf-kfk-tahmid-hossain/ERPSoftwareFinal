@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-+(ze!uu8^8sbz&gd!f=!qzmd)yjg@$j(o_y*(9o+h9cdc)4lh-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Allow the default ``testserver`` host used by Django's test Client.
-ALLOWED_HOSTS = ['testserver']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -38,11 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'erp_project.accounts',
-    'erp_project.inventory',
-    'erp_project.purchasing',
-    'erp_project.ledger',
-    'erp_project.pos',
+    'accounts',
+    'inventory',
+    'purchasing',
+    'ledger',
+    'pos',
 ]
 
 MIDDLEWARE = [
@@ -53,15 +52,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Use full dotted path for middleware to ensure the package is resolved when
-    # ``erp_project`` is added to ``PYTHONPATH`` during testing.
-    'erp_project.accounts.middleware.AuditLogMiddleware',
+    'accounts.middleware.AuditLogMiddleware',
 ]
 
-# The project lives inside the ``erp_project`` package, so use the full dotted
-# path to the URL configuration to avoid import issues when Django loads URLs
-# during tests or command execution.
-ROOT_URLCONF = 'erp_project.erp_project.urls'
+ROOT_URLCONF = 'erp_project.urls'
 
 TEMPLATES = [
     {
@@ -73,8 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # Context processor resides in ``erp_project.accounts`` package.
-                'erp_project.accounts.context_processors.nav_permissions',
+                'accounts.context_processors.nav_permissions',
             ],
         },
     },

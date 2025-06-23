@@ -11,7 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-# Ensure the full settings path is used so importing works during tests.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_project.erp_project.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_project.settings')
 
 application = get_asgi_application()
