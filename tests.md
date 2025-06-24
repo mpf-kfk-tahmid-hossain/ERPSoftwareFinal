@@ -79,3 +79,61 @@
   Actions like adding, editing, or reactivating suppliers must display a clear success message.
 
 ---
+
+### 📝 **Product Detail & Enhancement Checklist**
+
+#### **Product Detail Page & Specs**
+
+* [ ] Product **Detail Page** exists for each product and is accessible from the product list.
+* [ ] Product detail page displays:
+
+  * [ ] **Product Name, SKU/Code**
+  * [ ] **Product Description** (main description field)
+  * [ ] **Product Photos** (gallery-style image viewer)
+  * [ ] **Amount of Inventory Present** (for this product)
+  * [ ] **Inventory per Warehouse** (if multi-location, shows quantity by warehouse)
+  * [ ] **Specs Section**:
+
+    * [ ] **Specs** stored as custom JSON key-value pairs.
+    * [ ] Specs can be grouped/categorized—user can define new categories, e.g., General, Technical, Warranty, Additional, Support, etc.
+    * [ ] Categories and spec keys are not fixed—user can add/remove/edit categories and keys as needed.
+
+#### **Product Form Enhancements**
+
+* [ ] Product **Create/Edit Form**:
+
+  * [ ] **Specs** input allows adding/editing categories and custom fields as JSON (dynamic UI—add category, add field).
+  * [ ] Field for **main description**.
+  * [ ] **Photo upload** field(s) (multiple images, drag-and-drop or file picker).
+  * [ ] **Category assignment** (main category + optional subcategories if taxonomy is needed).
+  * [ ] **Warehouse selection** for initial inventory and ongoing adjustment.
+  * [ ] Form validation for required fields and specs completeness.
+
+#### **Product Page Ecommerce Layout**
+
+* [ ] Product detail page layout resembles modern ecommerce style:
+
+  * [ ] **Image gallery** at top or side
+  * [ ] Main info (name, SKU, short description) prominent
+  * [ ] Specs displayed as **accordion** or **tabbed** sections by category
+  * [ ] Inventory numbers and per-warehouse info displayed clearly
+  * [ ] **Requisition button** (visible if user has permission) to create a purchase/stock requisition from this page
+
+#### **Requisition Integration**
+
+* [ ] If user has **requisition permission**:
+
+  * [ ] **"Request/Requisition Product"** button is visible.
+  * [ ] Clicking opens a form/modal to create a requisition (quantity, warehouse, comments).
+  * [ ] Successful requisition shows confirmation and links back to product or requisition tracking.
+
+#### **Product Search/List Enhancements**
+
+* [ ] Product list supports:
+
+  * [ ] **Image thumbnails**
+  * [ ] **Inventory column**
+  * [ ] **Quick view/preview** action (modal or inline)
+  * [ ] Search/filter by category, spec value, inventory level, etc.
+
+---
