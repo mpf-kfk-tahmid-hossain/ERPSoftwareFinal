@@ -247,6 +247,7 @@ class PurchaseRequisition(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     specification = models.CharField(max_length=255, blank=True)
     justification = models.TextField(blank=True)
+    items = models.JSONField(default=list, blank=True)
     requester = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)

@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.utils import timezone
 import random
+import json
 from accounts.utils import (
     AdvancedListMixin,
     require_permission,
@@ -577,26 +578,38 @@ class PurchaseRequisitionCreateView(LoginRequiredMixin, View):
 
     def post(self, request):
         number = request.POST.get('number', '').strip()
+        just = request.POST.get('justification', '').strip()
+        items_raw = request.POST.get('items_json', '')
+        items = []
+        if items_raw:
+            try:
+                items = json.loads(items_raw)
+            except json.JSONDecodeError:
+                products = Product.objects.filter(company=request.user.company)
+                err = 'Invalid items data'
+                return render(request, 'requisition_form.html', {'products': products, 'error': err})
         product_id = request.POST.get('product')
         qty = request.POST.get('quantity', '').strip()
         spec = request.POST.get('specification', '').strip()
-        just = request.POST.get('justification', '').strip()
-        if not number or not product_id or not qty:
+        if not items and (not number or not product_id or not qty):
             products = Product.objects.filter(company=request.user.company)
             return render(request, 'requisition_form.html', {'products': products, 'error': 'All fields required'})
         if PurchaseRequisition.objects.filter(number=number, company=request.user.company).exists():
             products = Product.objects.filter(company=request.user.company)
             return render(request, 'requisition_form.html', {'products': products, 'error': 'Number exists'})
-        product = get_object_or_404(Product, pk=product_id, company=request.user.company)
+        product = None
+        if product_id:
+            product = get_object_or_404(Product, pk=product_id, company=request.user.company)
         pr = PurchaseRequisition.objects.create(
             number=number,
             product=product,
-            quantity=qty,
+            quantity=qty or 0,
             specification=spec,
             justification=just,
             requester=request.user,
             status=PurchaseRequisition.PENDING,
             company=request.user.company,
+            items=items,
         )
         log_action(request.user, 'create_pr', details={'number': number}, company=request.user.company)
         return redirect('requisition_detail', pk=pr.pk)

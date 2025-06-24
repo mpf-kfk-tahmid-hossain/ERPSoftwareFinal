@@ -7,6 +7,7 @@ from .models import (
     ProductCategory,
     ProductUnit,
     Product,
+    ProductImage,
     StockLot,
     StockMovement,
     InventoryAdjustment,
@@ -422,4 +423,28 @@ class NoHTMXUsageTests(TestCase):
             content = tpl.read_text()
             self.assertNotIn('hx-get', content, f"hx-get found in {tpl}")
             self.assertNotIn('hx-post', content, f"hx-post found in {tpl}")
+
+
+class ProductImagePermissionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='ImgCo', code='IC1')
+        self.user = User.objects.create_user(username='img', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perm, _ = Permission.objects.get_or_create(codename='can_edit_product_images')
+        role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='img', password='pass')
+        unit = ProductUnit.objects.create(code='PCS', name='Pieces')
+        self.product = Product.objects.create(name='P', sku='P1', unit=unit, company=self.company)
+
+    def test_add_and_delete_image_requires_permission(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        img = SimpleUploadedFile('a.jpg', b'abc', content_type='image/jpeg')
+        resp = self.client.post(reverse('product_image_add', args=[self.product.id]), {'photos': img})
+        self.assertEqual(resp.status_code, 302)
+        pi = ProductImage.objects.first()
+        self.assertIsNotNone(pi)
+        resp = self.client.post(reverse('product_image_delete', args=[pi.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(ProductImage.objects.exists())
 

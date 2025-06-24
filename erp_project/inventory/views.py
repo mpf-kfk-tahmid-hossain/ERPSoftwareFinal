@@ -461,6 +461,7 @@ class ProductDetailView(TemplateView):
             'warehouse_data': per_wh,
             'can_requisition': user_has_permission(self.request.user, 'add_purchaserequisition'),
             'can_change_product': user_has_permission(self.request.user, 'change_product'),
+            'can_edit_images': user_has_permission(self.request.user, 'can_edit_product_images'),
         })
         return context
 
@@ -473,9 +474,13 @@ class ProductQuickView(TemplateView):
 
     def get_context_data(self, **kwargs):
         product = get_object_or_404(Product, pk=self.kwargs['pk'], company=self.request.user.company)
-        image = product.images.first()
+        images = list(product.images.all())
         context = super().get_context_data(**kwargs)
-        context.update({'product': product, 'image': image})
+        context.update({
+            'product': product,
+            'images': images,
+            'can_edit_images': user_has_permission(self.request.user, 'can_edit_product_images'),
+        })
         return context
 
 @method_decorator(require_permission('add_product'), name='dispatch')
@@ -717,6 +722,24 @@ class ProductUpdateView(View):
             ProductImage.objects.create(product=product, image=img)
         log_action(request.user, 'update_product', details={'id': product.id}, company=request.user.company)
         return redirect('product_detail', pk=product.id)
+
+
+@method_decorator(require_permission('can_edit_product_images'), name='dispatch')
+class ProductImageAddView(View):
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk, company=request.user.company)
+        for img in request.FILES.getlist('photos'):
+            ProductImage.objects.create(product=product, image=img)
+        return redirect('product_detail', pk=pk)
+
+
+@method_decorator(require_permission('can_edit_product_images'), name='dispatch')
+class ProductImageDeleteView(View):
+    def post(self, request, pk):
+        image = get_object_or_404(ProductImage, pk=pk, product__company=request.user.company)
+        prod_id = image.product_id
+        image.delete()
+        return redirect('product_detail', pk=prod_id)
 
 
 @method_decorator(require_permission('view_stocklot'), name='dispatch')
