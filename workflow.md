@@ -418,10 +418,6 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 
 ---
 
-Here is your **Procurement Workflow** written in the same style and structure as `workflow.md` (actors, steps, purpose, checklist). This follows your requested level of detail and is suitable for a robust ERP implementation.
-
----
-
 # Workflow
 
 ## **Workflow Description: Procurement Cycle (Requisition to Payment with Three-Way Match)**
