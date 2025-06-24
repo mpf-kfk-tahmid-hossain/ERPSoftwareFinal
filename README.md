@@ -8,3 +8,7 @@ Passwords are stored using the Argon2 hashing algorithm for improved security. E
 This project requires Pillow for profile picture uploads.
 
 Uploaded media files are stored in the `media/` directory during development. Ensure `MEDIA_ROOT` and `MEDIA_URL` are configured and that Django serves media files when `DEBUG=True`.
+
+## SKU Pattern
+
+See [docs/api/sku_format.md](docs/api/sku_format.md) for details on the automatic SKU format used throughout the system.

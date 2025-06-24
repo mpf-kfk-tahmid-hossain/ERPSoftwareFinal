@@ -10,6 +10,7 @@ from .models import (
     StockLot,
     StockMovement,
     InventoryAdjustment,
+    ProductSerial,
 )
 
 User = get_user_model()
@@ -58,9 +59,10 @@ class CategoryViewTests(TestCase):
         self.client.login(username='inv', password='pass')
 
     def test_create_category(self):
-        resp = self.client.post(reverse('category_add'), {'name': 'Cat1'})
+        resp = self.client.post(reverse('category_add'), {'name': 'Cat1', 'code': ''})
         self.assertEqual(resp.status_code, 302)
-        self.assertTrue(ProductCategory.objects.filter(name='Cat1', company=self.company).exists())
+        cat = ProductCategory.objects.get(name='Cat1', company=self.company)
+        self.assertTrue(cat.code)
 
     def test_create_category_ignores_new_parent_marker(self):
         resp = self.client.post(reverse('category_add'), {'name': 'CatNew', 'parent': '__new__'})
@@ -162,7 +164,7 @@ class ProductFlowTests(TestCase):
             'add_stocklot', 'view_stocklot',
             'add_stockmovement', 'view_stockmovement',
             'add_inventoryadjustment', 'view_inventoryadjustment',
-            'view_stock_on_hand'
+            'view_stock_on_hand', 'change_productcategory'
         ]
         for codename in perms:
             perm, _ = Permission.objects.get_or_create(codename=codename)
@@ -177,8 +179,8 @@ class ProductFlowTests(TestCase):
         unit = ProductUnit.objects.get(code='PCS')
         # create category and product
         cat = ProductCategory.objects.create(name='Cat', company=self.company)
-        self.client.post(reverse('product_add'), {'name': 'Prod1', 'sku': 'SKU1', 'unit': unit.id, 'category': cat.id})
-        prod = Product.objects.get(sku='SKU1')
+        self.client.post(reverse('product_add'), {'name': 'Prod1', 'unit': unit.id, 'category': cat.id})
+        prod = Product.objects.first()
         # create warehouse and stock lot
         wh = Warehouse.objects.create(name='WH', location='L', company=self.company)
         self.client.post(reverse('stock_lot_add'), {
@@ -207,6 +209,17 @@ class ProductFlowTests(TestCase):
         # stock on hand
         resp = self.client.get(reverse('stock_on_hand'))
         self.assertEqual(resp.status_code, 200)
+
+    def test_auto_sku_generation(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        cat = ProductCategory.objects.create(name='Leaf', company=self.company)
+        resp = self.client.post(reverse('product_add'), {
+            'name': 'AutoProd', 'unit': unit.id, 'category': cat.id
+        })
+        self.assertEqual(resp.status_code, 302)
+        prod = Product.objects.get(name='AutoProd')
+        self.assertTrue(prod.sku.startswith(self.company.code))
+
 
     def test_product_detail_view_shows_specs_and_inventory(self):
         unit = ProductUnit.objects.create(code='BX', name='Box')
@@ -242,10 +255,10 @@ class ProductFlowTests(TestCase):
         unit = ProductUnit.objects.create(code='BX', name='Box')
         wh = Warehouse.objects.create(name='Main', location='A', company=self.company)
         self.client.post(reverse('product_add'), {
-            'name': 'Saw', 'sku': 'S1', 'unit': unit.id,
+            'name': 'Saw', 'unit': unit.id,
             'init_wh': [str(wh.id)], 'init_qty': ['5']
         })
-        self.assertTrue(StockLot.objects.filter(product__sku='S1', warehouse=wh).exists())
+        self.assertEqual(StockLot.objects.filter(warehouse=wh).count(), 1)
 
 
 class InventoryEndToEndTests(TestCase):
@@ -283,11 +296,10 @@ class InventoryEndToEndTests(TestCase):
         # create product
         self.client.post(reverse('product_add'), {
             'name': 'Widget',
-            'sku': 'W1',
             'unit': unit.id,
             'category': category.id,
         })
-        product = Product.objects.get(sku='W1')
+        product = Product.objects.first()
 
         # create warehouse
         self.client.post(reverse('warehouse_add'), {'name': 'Main', 'location': 'A'})
@@ -331,6 +343,51 @@ class InventoryEndToEndTests(TestCase):
         # audit log list accessible
         log_resp = self.client.get(reverse('audit_log_list'))
         self.assertEqual(log_resp.status_code, 200)
+
+
+class SKUGenerationTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='AutoCo', code='AC01')
+        self.user = User.objects.create_user(username='auto', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = ['add_productunit', 'add_product', 'view_product']
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='auto', password='pass')
+
+    def test_serial_increment_per_category(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        cat = ProductCategory.objects.create(name='Leaf', company=self.company)
+        self.client.post(reverse('product_add'), {'name': 'P1', 'unit': unit.id, 'category': cat.id})
+        self.client.post(reverse('product_add'), {'name': 'P2', 'unit': unit.id, 'category': cat.id})
+        p1 = Product.objects.get(name='P1')
+        p2 = Product.objects.get(name='P2')
+        self.assertTrue(p1.sku.endswith('-000001'))
+        self.assertTrue(p2.sku.endswith('-000002'))
+
+    def test_serial_tracking_uses_single_sku(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        cat = ProductCategory.objects.create(name='Leaf', company=self.company)
+        prod = Product.objects.create(name='Track', unit=unit, category=cat, company=self.company, track_serial=True)
+        ProductSerial.objects.create(product=prod, serial='A1')
+        ProductSerial.objects.create(product=prod, serial='A2')
+        self.assertEqual(ProductSerial.objects.filter(product=prod).count(), 2)
+        for ser in ProductSerial.objects.filter(product=prod):
+            self.assertEqual(ser.product.sku, prod.sku)
+
+    def test_migration_function_generates_skus(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        cat = ProductCategory.objects.create(name='Leaf', company=self.company)
+        prod = Product.objects.create(name='Old', sku='OLD1', unit=unit, category=cat, company=self.company)
+        from importlib import import_module
+        from django.apps import apps
+        migrate = import_module('inventory.migrations.0010_migrate_skus').migrate_skus
+        migrate(apps, None)
+        prod.refresh_from_db()
+        self.assertEqual(prod.legacy_sku, 'OLD1')
+        self.assertTrue(prod.sku.startswith(self.company.code))
 
 
 class TemplateValueSanityTests(TestCase):

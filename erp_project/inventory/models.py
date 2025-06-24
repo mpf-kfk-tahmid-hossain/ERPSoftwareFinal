@@ -17,12 +17,29 @@ class ProductCategory(models.Model):
     """Hierarchical grouping for products."""
 
     name = models.CharField(max_length=255)
+    code = models.CharField(max_length=8, unique=True, blank=True)
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True, related_name='children'
     )
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     is_discontinued = models.BooleanField(default=False)
     required_identifiers = models.ManyToManyField('IdentifierType', blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_code() -> str:
+        import random
+        import string
+        for length in range(4, 9):
+            for _ in range(100):
+                code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+                if not ProductCategory.objects.filter(code=code).exists():
+                    return code
+        raise ValueError('Unable to generate unique category code')
 
     def __str__(self) -> str:
         return self.name
@@ -64,7 +81,8 @@ class ProductUnit(models.Model):
 class Product(models.Model):
     """Product master record."""
     name = models.CharField(max_length=255)
-    sku = models.CharField(max_length=50, unique=True)
+    sku = models.CharField(max_length=50, unique=True, blank=True)
+    legacy_sku = models.CharField(max_length=50, blank=True)
     barcode = models.CharField(max_length=50, blank=True)
     unit = models.ForeignKey(ProductUnit, on_delete=models.PROTECT)
     brand = models.CharField(max_length=255, blank=True)
@@ -76,6 +94,26 @@ class Product(models.Model):
     vat_rate = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     specs = models.JSONField(default=dict, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.sku and self.company and self.category:
+            self.sku = self._generate_sku()
+        super().save(*args, **kwargs)
+
+    def _generate_sku(self) -> str:
+        prefix = self.company.code
+        cat_code = self.category.code if self.category else 'GEN'
+        base = f"{prefix}-{cat_code}-"
+        max_serial = 0
+        for prod in Product.objects.filter(company=self.company, category=self.category, sku__startswith=base):
+            try:
+                seq = int(prod.sku.split('-')[-1])
+                if seq > max_serial:
+                    max_serial = seq
+            except (ValueError, IndexError):
+                continue
+        serial = f"{max_serial + 1:06d}"
+        return f"{base}{serial}"
 
     def __str__(self) -> str:
         return self.name

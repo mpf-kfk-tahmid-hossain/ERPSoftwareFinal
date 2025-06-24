@@ -13,8 +13,27 @@ class Permission(models.Model):
 
 class Company(models.Model):
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50, unique=True, blank=True)
     address = models.TextField(blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_code() -> str:
+        """Generate a unique company code using a random prefix and sequence."""
+        import random
+        import string
+
+        prefix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        seq = 1
+        while True:
+            code = f"{prefix}{seq:02d}"
+            if not Company.objects.filter(code=code).exists():
+                return code
+            seq += 1
 
     def __str__(self):
         return self.name

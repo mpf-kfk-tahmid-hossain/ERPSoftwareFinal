@@ -69,7 +69,7 @@
   {% if can_requisition %}
   <a href="{% url 'requisition_add' %}?product={{ product.id }}" class="btn btn-primary">Request Product</a>
   {% endif %}
-  {% if user|has_permission:'change_product' %}
+  {% if can_change_product %}
   <a href="{% url 'product_edit' product.id %}" class="btn btn-secondary">Edit</a>
   {% endif %}
 </div>
