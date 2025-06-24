@@ -418,8 +418,6 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 
 ---
 
-# Workflow
-
 ## **Workflow Description: Procurement Cycle (Requisition to Payment with Three-Way Match)**
 
 ### **Purpose**
