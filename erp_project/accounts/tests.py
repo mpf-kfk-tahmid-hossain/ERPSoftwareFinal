@@ -2,6 +2,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from unittest import mock
 from .models import Company, Role, UserRole, Permission, AuditLog
 from .utils import log_action
 
@@ -14,9 +15,10 @@ class OnboardingTests(TestCase):
     def test_superuser_login_and_create_company(self):
         login = self.client.login(username='admin', password='pass')
         self.assertTrue(login)
-        response = self.client.post(reverse('company_add'), {'name': 'Acme', 'code': 'AC', 'address': 'Addr'})
+        response = self.client.post(reverse('company_add'), {'name': 'Acme', 'code': '', 'address': 'Addr'})
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Company.objects.filter(code='AC').exists())
+        comp = Company.objects.get(name='Acme')
+        self.assertTrue(comp.code)
 
     def test_company_detail_view(self):
         company = Company.objects.create(name='Beta', code='B', address='')
@@ -101,8 +103,9 @@ class IntegrationFlowTests(TestCase):
 
     def test_happy_path_onboarding(self):
         self.client.login(username='admin', password='pass')
-        self.client.post(reverse('company_add'), {'name': 'Acme', 'code': 'AC', 'address': 'A'})
-        company = Company.objects.get(code='AC')
+        self.client.post(reverse('company_add'), {'name': 'Acme', 'address': 'A'})
+        company = Company.objects.get(name='Acme')
+        self.assertTrue(company.code)
         resp = self.client.post(reverse('user_add', args=[company.id]), {
             'username': 'coadmin',
             'password1': 'pass12345',
@@ -121,9 +124,9 @@ class IntegrationFlowTests(TestCase):
 
         # Step 2: Company Registration
         self.client.post(reverse('company_add'), {
-            'name': 'StepCo', 'code': 'ST', 'address': 'Addr'
+            'name': 'StepCo', 'address': 'Addr'
         })
-        company = Company.objects.get(code='ST')
+        company = Company.objects.get(name='StepCo')
         other_company = Company.objects.create(name='OtherCo', code='OC', address='')
 
         # Step 3: Company Admin User Creation
@@ -185,6 +188,23 @@ class CompanyUserLoginTests(TestCase):
         self.assertContains(dash, reverse('user_list', args=[self.company.id]))
         list_resp = self.client.get(reverse('user_list', args=[self.company.id]))
         self.assertEqual(list_resp.status_code, 200)
+
+
+
+
+class CompanyCodeAutoTests(TestCase):
+    def test_code_generation_sequence_and_length(self):
+        with mock.patch('random.choices', return_value=list('ABCD')):
+            c1 = Company.objects.create(name='C1')
+            c2 = Company.objects.create(name='C2')
+            self.assertEqual(c1.code, 'ABCD01')
+            self.assertEqual(c2.code, 'ABCD02')
+            # create many to expand digits
+            for i in range(3, 105):
+                Company.objects.create(name=f'C{i}')
+            last = Company.objects.order_by('-id').first()
+            self.assertTrue(last.code.startswith('ABCD'))
+            self.assertGreaterEqual(len(last.code), 7)
 
 
 class PermissionDecoratorTests(TestCase):

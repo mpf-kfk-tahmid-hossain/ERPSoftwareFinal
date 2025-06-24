@@ -12,13 +12,6 @@
     {% endfor %}
   </div>
   <div class="mb-3">
-    <label for="id_code" class="form-label">Code</label>
-    <input type="text" name="code" id="id_code" class="form-control" value="{{ code }}" required>
-    {% for error in form.code.errors %}
-      <div class="invalid-feedback">{{ error }}</div>
-    {% endfor %}
-  </div>
-  <div class="mb-3">
     <label for="id_address" class="form-label">Address</label>
     <input type="text" name="address" id="id_address" class="form-control" value="{{ address }}">
     {% for error in form.address.errors %}

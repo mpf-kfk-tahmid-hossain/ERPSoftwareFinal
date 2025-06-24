@@ -319,6 +319,8 @@ def category_discontinue(request, pk):
     return HttpResponseBadRequest('Invalid request')
 
 
+
+
 @require_permission('view_productcategory')
 def category_children(request):
     """Return child categories as JSON for AJAX cascading selects."""
@@ -458,6 +460,7 @@ class ProductDetailView(TemplateView):
             'total_qty': total,
             'warehouse_data': per_wh,
             'can_requisition': user_has_permission(self.request.user, 'add_purchaserequisition'),
+            'can_change_product': user_has_permission(self.request.user, 'change_product'),
         })
         return context
 
@@ -490,7 +493,6 @@ class ProductCreateView(View):
                 'warehouses_json': json.dumps(warehouses),
                 'product': None,
                 'name': '',
-                'sku': '',
                 'unit_id': '',
                 'brand': '',
                 'barcode': '',
@@ -504,10 +506,9 @@ class ProductCreateView(View):
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
-        sku = request.POST.get('sku', '').strip()
         unit_id = request.POST.get('unit')
         unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
-        if not name or not sku or not unit:
+        if not name or not unit:
             units = ProductUnit.objects.all()
             warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
             context = {
@@ -516,7 +517,6 @@ class ProductCreateView(View):
                 'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
                 'warehouses_json': json.dumps(warehouses),
                 'name': name,
-                'sku': sku,
                 'unit_id': unit_id,
                 'brand': request.POST.get('brand', '').strip(),
                 'barcode': request.POST.get('barcode', '').strip(),
@@ -551,7 +551,6 @@ class ProductCreateView(View):
                 'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
                 'warehouses_json': json.dumps(warehouses),
                 'name': name,
-                'sku': sku,
                 'unit_id': unit_id,
                 'brand': brand,
                 'barcode': request.POST.get('barcode', '').strip(),
@@ -563,6 +562,8 @@ class ProductCreateView(View):
                 'product': None,
             }
             return render(request, 'product_form.html', context)
+        sku = ''
+
         product = Product.objects.create(
             name=name,
             sku=sku,
@@ -585,7 +586,7 @@ class ProductCreateView(View):
                 StockLot.objects.create(product=product, warehouse=warehouse, batch_number='INIT', qty=qty)
         for img in request.FILES.getlist('photos'):
             ProductImage.objects.create(product=product, image=img)
-        log_action(request.user, 'create_product', details={'sku': sku}, company=request.user.company)
+        log_action(request.user, 'create_product', details={'sku': product.sku}, company=request.user.company)
         return redirect('product_list')
 
 
@@ -605,7 +606,6 @@ class ProductUpdateView(View):
             'warehouses_json': json.dumps(warehouses),
             'product': product,
             'name': product.name,
-            'sku': product.sku,
             'unit_id': product.unit_id,
             'brand': product.brand,
             'barcode': product.barcode,
@@ -620,10 +620,9 @@ class ProductUpdateView(View):
     def post(self, request, pk):
         product = self.get_object(pk, request.user)
         name = request.POST.get('name', '').strip()
-        sku = request.POST.get('sku', '').strip()
         unit_id = request.POST.get('unit')
         unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
-        if not name or not sku or not unit:
+        if not name or not unit:
             units = ProductUnit.objects.all()
             warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
             context = {
@@ -632,7 +631,6 @@ class ProductUpdateView(View):
                 'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
                 'warehouses_json': json.dumps(warehouses),
                 'name': name,
-                'sku': sku,
                 'unit_id': unit_id,
                 'brand': request.POST.get('brand', '').strip(),
                 'barcode': request.POST.get('barcode', '').strip(),
@@ -658,7 +656,6 @@ class ProductUpdateView(View):
                 'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
                 'warehouses_json': json.dumps(warehouses),
                 'name': name,
-                'sku': sku,
                 'unit_id': unit_id,
                 'brand': request.POST.get('brand', '').strip(),
                 'barcode': request.POST.get('barcode', '').strip(),
@@ -671,7 +668,6 @@ class ProductUpdateView(View):
             }
             return render(request, 'product_form.html', context)
         product.name = name
-        product.sku = sku
         product.unit = unit
         product.brand = request.POST.get('brand', '').strip()
         product.category = None

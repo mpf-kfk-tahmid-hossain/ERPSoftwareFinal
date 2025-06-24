@@ -20,7 +20,7 @@ class SuperuserRequiredMixin(UserPassesTestMixin):
 @method_decorator(require_permission('add_company'), name='dispatch')
 class CompanyCreateView(LoginRequiredMixin, SuperuserRequiredMixin, CreateView):
     model = Company
-    fields = ['name', 'code', 'address']
+    fields = ['name', 'address']
     template_name = 'company_form.html'
     success_url = reverse_lazy('company_list')
 
@@ -28,16 +28,18 @@ class CompanyCreateView(LoginRequiredMixin, SuperuserRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         form = context.get('form')
         context['name'] = (form['name'].value() or '') if form else ''
-        context['code'] = (form['code'].value() or '') if form else ''
         context['address'] = (form['address'].value() or '') if form else ''
         return context
 
     def form_invalid(self, form):
         context = self.get_context_data(form=form)
         context['name'] = form.data.get('name', '')
-        context['code'] = form.data.get('code', '')
         context['address'] = form.data.get('address', '')
         return self.render_to_response(context)
+
+    def form_valid(self, form):
+        form.instance.code = Company._generate_code()
+        return super().form_valid(form)
 
 @method_decorator(require_permission('view_company'), name='dispatch')
 class CompanyListView(LoginRequiredMixin, SuperuserRequiredMixin, AdvancedListMixin, TemplateView):
@@ -95,7 +97,7 @@ class CompanyDetailView(LoginRequiredMixin, SuperuserRequiredMixin, DetailView):
 @method_decorator(require_permission('change_company'), name='dispatch')
 class CompanyUpdateView(LoginRequiredMixin, SuperuserRequiredMixin, UpdateView):
     model = Company
-    fields = ['name', 'code', 'address']
+    fields = ['name', 'address']
     template_name = 'company_form.html'
     success_url = reverse_lazy('company_list')
 
@@ -104,16 +106,16 @@ class CompanyUpdateView(LoginRequiredMixin, SuperuserRequiredMixin, UpdateView):
         company = self.get_object()
         context['company'] = company
         context['name'] = company.name
-        context['code'] = company.code
         context['address'] = company.address
         return context
 
     def form_invalid(self, form):
         context = self.get_context_data(form=form)
         context['name'] = form.data.get('name', '')
-        context['code'] = form.data.get('code', '')
         context['address'] = form.data.get('address', '')
         return self.render_to_response(context)
+
+
 
 @method_decorator(require_permission('view_user'), name='dispatch')
 class UserListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
