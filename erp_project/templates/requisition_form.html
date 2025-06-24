@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load json_script %}
 {% block title %}New Purchase Requisition{% endblock %}
 {% block content %}
 <h2>New Purchase Requisition</h2>
+<p class="text-muted small">Use this form to request products, services, or any other needs.</p>
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
   <div class="mb-3">
@@ -11,7 +11,8 @@
     <input type="text" name="number" id="id_number" class="form-control" required>
   </div>
   <div id="line-items"></div>
-  <button type="button" class="btn btn-secondary mb-3" id="add-line">Add Line</button>
+  <button type="button" class="btn btn-secondary mb-3" id="add-line" data-bs-toggle="tooltip" title="Add a new line">Add Line</button>
+  <div id="summary" class="mb-3 text-muted"><span id="summary-text">Total lines: 0, Total qty: 0</span></div>
   <div class="mb-3">
     <label class="form-label" for="id_just">Justification</label>
     <textarea name="justification" id="id_just" class="form-control"></textarea>
@@ -22,8 +23,9 @@
 </form>
 {% endblock %}
 {% block extra_js %}
+{{ products|json_script:"prod-data" }}
 <script src="/static/js/requisition_form.js"></script>
 <script>
-const products = JSON.parse('{{ products|json_script:"prod" }}');
+const products = JSON.parse(document.getElementById('prod-data').textContent);
 </script>
 {% endblock %}

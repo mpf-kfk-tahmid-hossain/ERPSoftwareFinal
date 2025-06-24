@@ -24,7 +24,9 @@ function addLine(){
     <div class="col-md-1 text-end"><button type="button" class="btn btn-danger btn-sm remove-line">&times;</button></div>
   </div>`;
   container.appendChild(div);
-  div.querySelector('.remove-line').onclick=()=>div.remove();
+  div.querySelector('.remove-line').onclick=()=>{div.remove();updateSummary();};
+  div.querySelector('input[name="line_qty"]').addEventListener('input', updateSummary);
+  updateSummary();
 }
 function collect(){
   const items=[];
@@ -38,6 +40,17 @@ function collect(){
   document.getElementById('items_json').value=JSON.stringify(items);
 }
 
+function updateSummary(){
+  const lines=document.querySelectorAll('#line-items > div');
+  let total=0;
+  lines.forEach(div=>{
+    const q=parseFloat(div.querySelector('input[name="line_qty"]').value)||0;
+    total+=q;
+  });
+  document.getElementById('summary-text').textContent=`Total lines: ${lines.length}, Total qty: ${total}`;
+}
+
 document.getElementById('add-line').addEventListener('click', addLine);
 document.querySelector('form').addEventListener('submit', collect);
 addLine();
+updateSummary();

@@ -573,7 +573,9 @@ class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, Templat
 @method_decorator(require_permission('add_purchaserequisition'), name='dispatch')
 class PurchaseRequisitionCreateView(LoginRequiredMixin, View):
     def get(self, request):
-        products = Product.objects.filter(company=request.user.company)
+        products = list(
+            Product.objects.filter(company=request.user.company).values('id', 'name')
+        )
         return render(request, 'requisition_form.html', {'products': products})
 
     def post(self, request):

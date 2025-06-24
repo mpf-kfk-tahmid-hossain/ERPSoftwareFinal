@@ -221,33 +221,33 @@
 
 ### 📝 **Product Image Carousel, Modal Handling, and Modular Purchase Requisition Form – AI Implementation Tasks**
 
-#### **1. Product Image Gallery/Carousel**
+-#### **1. Product Image Gallery/Carousel**
 
-- [ ] Implement a **product image gallery** on the product detail page:
+- [x] Implement a **product image gallery** on the product detail page:
     - Main image with left/right navigation (carousel).
     - Thumbnail navigation below/side (click or scroll to select main image).
     - Responsive: adapts to mobile and desktop.
-- [ ] On product list (grid/table), enable **quick view** via modal:
+- [x] On product list (grid/table), enable **quick view** via modal:
     - When opening modal, show product image carousel with thumbnails.
     - Ensure modal **can always be closed**—fix any issues where modal fails to close (e.g., overlay click, “X” icon, or Escape key).
 
-#### **2. Image Add/Delete in Carousel (With Permissions)**
+-#### **2. Image Add/Delete in Carousel (With Permissions)**
 
-- [ ] In the image carousel (detail page and modal):
+- [x] In the image carousel (detail page and modal):
     - If the user has permission (`can_edit_product_images`):
         - Show an **Add Image** icon/button in the carousel.
         - Show a **Delete** (trash/bin) icon on each image.
         - Add confirmation step for delete.
     - Ensure all changes (add/delete) are reflected instantly (via AJAX/HTMX or frontend reload).
 
-#### **3. Modular, Multi-Type Purchase Requisition Form**
+-#### **3. Modular, Multi-Type Purchase Requisition Form**
 
-- [ ] Update purchase requisition form to support **multiple request types**:
+- [x] Update purchase requisition form to support **multiple request types**:
     - Product (inventory item)
     - Office supply
     - Service (e.g., “Renovate Signboard”, “Annual AC maintenance”)
     - Other (allow free-text “type” for any unlisted category)
-- [ ] Allow **adding multiple line items** per requisition:
+- [x] Allow **adding multiple line items** per requisition:
     - Each line can be any type: product, office supply, service, or custom.
     - Fields per line:
         - **Type** (dropdown: Product / Office Supply / Service / Other)
@@ -256,15 +256,15 @@
         - **Unit/Service Unit** (optional for services)
         - **Price Estimate** (optional)
         - **Attachment** (for service docs/quotes, optional)
-- [ ] Modular, scalable design—easy to add new request types in future.
+- [x] Modular, scalable design—easy to add new request types in future.
 
 #### **4. General & Usability**
 
-- [ ] On requisition form, show running summary and total.
-- [ ] Add/remove lines easily (dynamic UI).
-- [ ] Add help text/tooltips so users know they can request *products, services, or anything needed*.
-- [ ] Validate permissions for add/delete actions, both frontend and backend.
-- [ ] Test on desktop/mobile, with at least 20+ images per product, multiple request lines per requisition.
+- [x] On requisition form, show running summary and total.
+- [x] Add/remove lines easily (dynamic UI).
+- [x] Add help text/tooltips so users know they can request *products, services, or anything needed*.
+- [x] Validate permissions for add/delete actions, both frontend and backend.
+- [x] Test on desktop/mobile, with at least 20+ images per product, multiple request lines per requisition.
 
 ---
 
