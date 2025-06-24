@@ -4,13 +4,15 @@
 <h2>Requisition {{ pr.number }}</h2>
 <ul class="list-group mb-3">
   <li class="list-group-item">Status: {{ pr.get_status_display }}</li>
+  <li class="list-group-item">Type: {{ pr.request_type }}</li>
+  <li class="list-group-item">Creator: {{ pr.requester.username }}</li>
   <li class="list-group-item">Justification: {{ pr.justification }}</li>
   {% if pr.items %}
   <li class="list-group-item">
     <strong>Items</strong>
     <ul class="mb-0">
       {% for item in pr.items %}
-      <li>{{ item.type }} - {{ item.description }} ({{ item.quantity }})</li>
+      <li>{{ item.name }} - {{ item.description }} ({{ item.quantity }} {{ item.unit }})</li>
       {% endfor %}
     </ul>
   </li>
@@ -28,6 +30,9 @@
   <button name="action" value="approve" class="btn btn-primary">Approve</button>
   <button name="action" value="reject" class="btn btn-danger">Reject</button>
 </form>
+{% endif %}
+{% if pr.status != 'draft' %}
+<a href="{% url 'requisition_pdf' pr.id %}" class="btn btn-secondary mb-3">Download PDF</a>
 {% endif %}
 <h4>Approvals</h4>
 <table class="table">

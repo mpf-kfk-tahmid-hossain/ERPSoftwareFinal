@@ -26,6 +26,7 @@ urlpatterns = [
     path('requisitions/add/', views.PurchaseRequisitionCreateView.as_view(), name='requisition_add'),
     path('requisitions/<int:pk>/', views.PurchaseRequisitionDetailView.as_view(), name='requisition_detail'),
     path('requisitions/<int:pk>/approve/', views.PurchaseRequisitionApproveView.as_view(), name='requisition_approve'),
+    path('requisitions/<int:pk>/pdf/', views.PurchaseRequisitionPDFView.as_view(), name='requisition_pdf'),
     path('suppliers/<int:supplier_id>/evaluate/', views.SupplierEvaluationCreateView.as_view(), name='supplier_evaluate'),
     path('banks/search/', views.BankSearchView.as_view(), name='bank_search'),
 ]
