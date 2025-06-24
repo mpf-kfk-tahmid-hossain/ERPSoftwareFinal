@@ -562,7 +562,27 @@ class ProductCreateView(View):
                 'product': None,
             }
             return render(request, 'product_form.html', context)
-        sku = ''
+        sku = request.POST.get('sku', '').strip()
+        if sku and Product.objects.filter(company=request.user.company, sku=sku).exists():
+            units = ProductUnit.objects.all()
+            warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+            context = {
+                'error': 'SKU already exists',
+                'units': units,
+                'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
+                'warehouses_json': json.dumps(warehouses),
+                'name': name,
+                'unit_id': unit_id,
+                'brand': brand,
+                'barcode': request.POST.get('barcode', '').strip(),
+                'vat_rate': request.POST.get('vat_rate'),
+                'sale_price': request.POST.get('sale_price'),
+                'description': request.POST.get('description', ''),
+                'specs_json': specs_raw,
+                'track_serial': bool(request.POST.get('track_serial')),
+                'product': None,
+            }
+            return render(request, 'product_form.html', context)
 
         product = Product.objects.create(
             name=name,

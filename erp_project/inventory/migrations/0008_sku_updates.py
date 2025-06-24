@@ -35,7 +35,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="productcategory",
             name="code",
-            field=models.CharField(blank=True, max_length=8, unique=True),
+            field=models.CharField(default="", blank=True, max_length=8),
+            preserve_default=False,
         ),
         migrations.AlterField(
             model_name="product",
@@ -43,4 +44,9 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, max_length=50, unique=True),
         ),
         migrations.RunPython(fill_category_codes, reverse_code=migrations.RunPython.noop),
+        migrations.AlterField(
+            model_name="productcategory",
+            name="code",
+            field=models.CharField(blank=True, max_length=8, unique=True),
+        ),
     ]
