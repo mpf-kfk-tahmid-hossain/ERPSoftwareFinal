@@ -70,6 +70,8 @@ class PurchaseOrder(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    acknowledged = models.BooleanField(default=False)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.order_number
@@ -98,6 +100,15 @@ class Payment(models.Model):
     is_advance = models.BooleanField(default=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
 
     def __str__(self):
         return f"Payment {self.amount}"
@@ -105,26 +116,39 @@ class Payment(models.Model):
     def save(self, *args, **kwargs):
         creating = self.pk is None
         super().save(*args, **kwargs)
-        if creating:
-            if self.is_advance:
-                debit = 'Supplier Advance'
-                credit = 'Cash' if self.method == self.METHOD_CASH else 'Bank'
+        if creating and self.status == self.STATUS_APPROVED:
+            self.post_ledger_entry()
+
+    def post_ledger_entry(self):
+        if self.is_advance:
+            debit = 'Supplier Advance'
+            credit = 'Cash' if self.method == self.METHOD_CASH else 'Bank'
+        else:
+            debit = 'Supplier'
+            if Payment.objects.filter(
+                purchase_order=self.purchase_order, is_advance=True
+            ).exists():
+                credit = 'Supplier Advance'
             else:
-                debit = 'Supplier'
-                if Payment.objects.filter(
-                    purchase_order=self.purchase_order, is_advance=True
-                ).exists():
-                    credit = 'Supplier Advance'
-                else:
-                    credit = 'Cash' if self.method == self.METHOD_CASH else 'Bank'
-            post_entry(
-                self.company,
-                'Payment',
-                [
-                    (debit, self.amount, 0),
-                    (credit, 0, self.amount),
-                ],
-            )
+                credit = 'Cash' if self.method == self.METHOD_CASH else 'Bank'
+        post_entry(
+            self.company,
+            'Payment',
+            [
+                (debit, self.amount, 0),
+                (credit, 0, self.amount),
+            ],
+        )
+
+
+class PaymentApproval(models.Model):
+    """Approval record for payments."""
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='approvals')
+    approver = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    approved = models.BooleanField()
+    comment = models.TextField(blank=True)
+    approved_at = models.DateTimeField(auto_now_add=True)
 
 
 class GoodsReceipt(models.Model):
@@ -157,6 +181,25 @@ class GoodsReceipt(models.Model):
             )
 
 
+class SupplierInvoice(models.Model):
+    """Invoice from supplier linked to a PO."""
+
+    number = models.CharField(max_length=50, unique=True)
+    purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    file = models.FileField(upload_to='invoices/', blank=True)
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_APPROVED, 'Approved'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.number
+
 class QuotationRequest(models.Model):
     """Request quotation from a supplier for specific products."""
 
@@ -175,8 +218,71 @@ class QuotationRequestLine(models.Model):
     )
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     ean = models.CharField(max_length=13, blank=True)
     serial_list = models.TextField(blank=True)
+    selected = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"
+
+# Purchase Requisition models added by agent
+
+class PurchaseRequisition(models.Model):
+    """Request to procure a product."""
+
+    DRAFT = 'draft'
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (DRAFT, 'Draft'),
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    ]
+
+    number = models.CharField(max_length=50, unique=True)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    specification = models.CharField(max_length=255, blank=True)
+    justification = models.TextField(blank=True)
+    requester = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    created_at = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.number
+
+
+class PurchaseRequisitionApproval(models.Model):
+    """Approval record for a requisition."""
+
+    requisition = models.ForeignKey(
+        PurchaseRequisition, on_delete=models.CASCADE, related_name='approvals'
+    )
+    approver = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    approved = models.BooleanField(null=True)
+    comment = models.TextField(blank=True)
+    level = models.PositiveIntegerField(default=1)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        state = 'Approved' if self.approved else 'Rejected'
+        if self.approved is None:
+            state = 'Pending'
+        return f"{self.approver} - {state}"
+
+
+class SupplierEvaluation(models.Model):
+    """Store evaluation scores for suppliers."""
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='evaluations')
+    score = models.DecimalField(max_digits=4, decimal_places=2)
+    comments = models.TextField(blank=True)
+    date = models.DateField(auto_now_add=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.supplier} {self.score}"

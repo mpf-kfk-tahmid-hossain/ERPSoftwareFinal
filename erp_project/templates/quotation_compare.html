@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Compare Quotations{% endblock %}
+{% block content %}
+<h2>Compare Quotations</h2>
+<form method="get" class="mb-3">
+  <select name="product" class="form-select w-auto d-inline">
+    <option value="">All Products</option>
+    {% for p in products %}
+    <option value="{{ p.id }}" {% if product_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-secondary" type="submit">Filter</button>
+</form>
+<table class="table">
+  <thead><tr><th>Product</th><th>Supplier</th><th>Qty</th><th>Price</th><th></th></tr></thead>
+  <tbody>
+    {% for line in lines %}
+    <tr>
+      <td>{{ line.product.name }}</td>
+      <td>{{ line.quotation.supplier.name }}</td>
+      <td>{{ line.quantity }}</td>
+      <td>{{ line.unit_price }}</td>
+      <td>
+        <form method="post" action="{% url 'quotation_select' line.id %}">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-primary">Select</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No quotations found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

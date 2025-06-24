@@ -55,3 +55,77 @@
   - **Method:** `POST`
   - **Auth:** `change_supplier`
   - **Response:** Partial HTML modal prompting for OTP entry
+
+## Purchase Requisitions
+- **List Requisitions**
+  - **URL:** `/purchasing/requisitions/`
+  - **Method:** `GET`
+  - **Auth:** `view_purchaserequisition`
+  - **Response:** HTML table of requisitions
+- **Create Requisition**
+  - **URL:** `/purchasing/requisitions/add/`
+  - **Method:** `POST`
+  - **Auth:** `add_purchaserequisition`
+  - **Payload:** `number`, `product`, `quantity`, `specification`, `justification`
+  - **Response:** Redirect to requisition detail
+- **Approve/Rejection**
+  - **URL:** `/purchasing/requisitions/<id>/approve/`
+  - **Method:** `POST`
+  - **Auth:** `approve_purchaserequisition`
+  - **Payload:** `action` (`approve` or `reject`), `comment`
+  - **Response:** Redirect to requisition detail
+
+## Quotation Comparison & Selection
+- **URL:** `/purchasing/quotations/compare/?product=<id>`
+- **Method:** `GET`
+- **Auth:** `add_purchaseorder`
+- **Response:** HTML table of quotation lines with select buttons
+- **Select Quotation**
+  - **URL:** `/purchasing/quotations/<line_id>/select/`
+  - **Method:** `POST`
+  - **Auth:** `add_purchaseorder`
+  - **Response:** Redirect to PO detail
+
+## Purchase Order Acknowledgment
+- **URL:** `/purchasing/purchase-orders/<id>/ack/`
+- **Method:** `POST`
+- **Auth:** `ack_purchaseorder`
+- **Response:** Redirect to PO detail
+
+## Supplier Invoices
+- **List Invoices**
+  - **URL:** `/purchasing/invoices/`
+  - **Method:** `GET`
+  - **Auth:** `view_supplierinvoice`
+- **Upload Invoice**
+  - **URL:** `/purchasing/invoices/add/`
+  - **Method:** `POST`
+  - **Auth:** `add_supplierinvoice`
+  - **Payload:** `number`, `po`, `amount`, `file`
+- **Three-Way Match**
+  - **URL:** `/purchasing/invoices/<id>/match/`
+  - **Method:** `GET`
+  - **Auth:** `view_supplierinvoice`
+
+## Payments
+- **List Payments**
+  - **URL:** `/purchasing/payments/`
+  - **Method:** `GET`
+  - **Auth:** `view_payment`
+- **Create Payment**
+  - **URL:** `/purchasing/payments/add/`
+  - **Method:** `POST`
+  - **Auth:** `add_payment`
+  - **Payload:** `po`, `amount`, `method`
+- **Approve Payment**
+  - **URL:** `/purchasing/payments/<id>/approve/`
+  - **Method:** `POST`
+  - **Auth:** `approve_payment`
+  - **Payload:** `action` (`approve`/`reject`), `comment`
+
+## Supplier Evaluation
+- **URL:** `/purchasing/suppliers/<id>/evaluate/`
+- **Method:** `POST`
+- **Auth:** `add_supplierevaluation`
+- **Payload:** `score`, `comments`
+- **Response:** Redirect to supplier detail
