@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Purchase Requisitions{% endblock %}
+{% block content %}
+<h2>Purchase Requisitions</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    {% include 'includes/filter_form.html' %}
+  </div>
+  {% if can_add %}<a class="btn btn-primary" href="{% url 'requisition_add' %}">New Requisition</a>{% endif %}
+</div>
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Number' field='number' %}
+      <th>Product</th>
+      <th>Qty</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in page_obj %}
+    <tr>
+      <td><a href="{% url 'requisition_detail' r.id %}">{{ r.number }}</a></td>
+      <td>{{ r.product.name }}</td>
+      <td>{{ r.quantity }}</td>
+      <td>{{ r.get_status_display }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+{% endblock %}

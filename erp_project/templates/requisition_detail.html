@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Requisition {{ pr.number }}{% endblock %}
+{% block content %}
+<h2>Requisition {{ pr.number }}</h2>
+<ul class="list-group mb-3">
+  <li class="list-group-item">Product: {{ pr.product.name }}</li>
+  <li class="list-group-item">Quantity: {{ pr.quantity }}</li>
+  <li class="list-group-item">Specification: {{ pr.specification }}</li>
+  <li class="list-group-item">Justification: {{ pr.justification }}</li>
+  <li class="list-group-item">Status: {{ pr.get_status_display }}</li>
+</ul>
+{% if can_approve %}
+<form method="post" class="mb-3">
+  {% csrf_token %}
+  <div class="mb-3">
+    <textarea name="comment" class="form-control" placeholder="Comment"></textarea>
+  </div>
+  <button name="action" value="approve" class="btn btn-primary">Approve</button>
+  <button name="action" value="reject" class="btn btn-danger">Reject</button>
+</form>
+{% endif %}
+<h4>Approvals</h4>
+<table class="table">
+  <thead><tr><th>Approver</th><th>Status</th><th>Comment</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for a in pr.approvals.all %}
+    <tr>
+      <td>{{ a.approver.username }}</td>
+      <td>{% if a.approved %}Approved{% elif a.approved is not None %}Rejected{% else %}Pending{% endif %}</td>
+      <td>{{ a.comment }}</td>
+      <td>{{ a.approved_at }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No approvals yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

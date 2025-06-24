@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Evaluate Supplier{% endblock %}
+{% block content %}
+<h2>Evaluate {{ supplier.name }}</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_score">Score</label>
+    <input type="number" step="0.1" name="score" id="id_score" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_comments">Comments</label>
+    <textarea name="comments" id="id_comments" class="form-control"></textarea>
+  </div>
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

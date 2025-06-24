@@ -44,11 +44,23 @@
         {% if user.is_authenticated and user.company and nav_perms.view_supplier %}
         <li class="nav-item"><a class="nav-link" href="{% url 'supplier_list' %}">Suppliers</a></li>
         {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.view_purchaserequisition %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_list' %}">Requisitions</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.add_purchaserequisition %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_add' %}">New Requisition</a></li>
+        {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.add_quotationrequest %}
         <li class="nav-item"><a class="nav-link" href="{% url 'quotation_add' %}">New Quotation</a></li>
         {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.add_purchaseorder %}
         <li class="nav-item"><a class="nav-link" href="{% url 'purchase_order_add' %}">New PO</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.view_supplierinvoice %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a></li>
+        {% endif %}
+        {% if user.is_authenticated and user.company and nav_perms.view_payment %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}">Payments</a></li>
         {% endif %}
         {% if user.is_authenticated and user.company and nav_perms.view_stocklot %}
         <li class="nav-item"><a class="nav-link" href="{% url 'stock_lot_list' %}">Stock Lots</a></li>

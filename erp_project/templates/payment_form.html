@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Create Payment{% endblock %}
+{% block content %}
+<h2>Create Payment</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_po">PO</label>
+    <select name="po" id="id_po" class="form-select">
+      <option value="">----</option>
+      {% for po in pos %}<option value="{{ po.id }}">{{ po.order_number }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_amount">Amount</label>
+    <input type="text" name="amount" id="id_amount" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_method">Method</label>
+    <select name="method" id="id_method" class="form-select">
+      <option value="cash">Cash</option>
+      <option value="bank">Bank</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-success">Submit</button>
+</form>
+{% endblock %}

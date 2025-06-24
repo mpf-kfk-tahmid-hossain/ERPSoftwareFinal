@@ -2,6 +2,13 @@
 {% block title %}PO {{ po.order_number }}{% endblock %}
 {% block content %}
 <h2>Purchase Order {{ po.order_number }}</h2>
+<p>Status: {% if po.acknowledged %}Acknowledged at {{ po.acknowledged_at }}{% else %}Pending Acknowledgment{% endif %}</p>
+{% if can_ack %}
+<form method="post" action="{% url 'purchase_order_ack' po.id %}" class="mb-2">
+  {% csrf_token %}
+  <button class="btn btn-primary">Mark Acknowledged</button>
+</form>
+{% endif %}
 <table class="table">
 <tr><th>Product</th><th>Qty</th><th>Price</th><th></th></tr>
 {% for line in po.lines.all %}

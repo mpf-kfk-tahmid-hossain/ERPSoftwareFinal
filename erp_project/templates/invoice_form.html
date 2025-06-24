@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Upload Supplier Invoice{% endblock %}
+{% block content %}
+<h2>Upload Supplier Invoice</h2>
+<form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_number">Number</label>
+    <input type="text" name="number" id="id_number" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_po">PO</label>
+    <select name="po" id="id_po" class="form-select" required>
+      {% for po in pos %}<option value="{{ po.id }}">{{ po.order_number }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_amount">Amount</label>
+    <input type="text" name="amount" id="id_amount" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_file">File</label>
+    <input type="file" name="file" id="id_file" class="form-control">
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

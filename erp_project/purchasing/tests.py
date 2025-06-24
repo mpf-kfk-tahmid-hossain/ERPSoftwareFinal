@@ -7,7 +7,18 @@ from inventory.models import (
     IdentifierType, ProductSerial, StockMovement
 )
 from ledger.models import LedgerAccount, LedgerEntry
-from .models import Bank, Supplier, PurchaseOrder, PurchaseOrderLine, GoodsReceipt, Payment
+from .models import (
+    Bank,
+    Supplier,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    GoodsReceipt,
+    Payment,
+    SupplierInvoice,
+    QuotationRequest,
+    QuotationRequestLine,
+    PurchaseRequisition,
+)
 
 User = get_user_model()
 
@@ -56,6 +67,7 @@ class PurchasingLedgerTests(TestCase):
             method=Payment.METHOD_CASH,
             is_advance=True,
             company=self.company,
+            status=Payment.STATUS_APPROVED,
         )
         wh = Warehouse.objects.create(name='Main', location='A', company=self.company)
         GoodsReceipt.objects.create(purchase_order=po, product=prod, qty_received=1, warehouse=wh, ean='1234567890123', serial='SN1')
@@ -64,6 +76,7 @@ class PurchasingLedgerTests(TestCase):
             amount=800,
             method=Payment.METHOD_CASH,
             company=self.company,
+            status=Payment.STATUS_APPROVED,
         )
         self.assertTrue(ProductSerial.objects.filter(product=prod, serial='SN1').exists())
         entries = LedgerEntry.objects.filter(company=self.company)
@@ -174,6 +187,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
             method=Payment.METHOD_CASH,
             is_advance=True,
             company=self.company,
+            status=Payment.STATUS_APPROVED,
         )
 
         # Warehouse
@@ -194,6 +208,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
             amount=800,
             method=Payment.METHOD_CASH,
             company=self.company,
+            status=Payment.STATUS_APPROVED,
         )
 
         # Shelf transfer (internal)
@@ -244,7 +259,7 @@ class IPhoneWorkflowIntegrationTests(TestCase):
     def test_insufficient_cash_blocks_payment(self):
         po = PurchaseOrder.objects.create(order_number='POZ', supplier=Supplier.objects.create(name='S', contact_person='CP3', email='s@example.com', phone='+14155550102', company=self.company, bank=self.bank), company=self.company)
         with self.assertRaises(ValueError):
-            Payment.objects.create(purchase_order=po, amount=2000, method=Payment.METHOD_CASH, company=self.company)
+            Payment.objects.create(purchase_order=po, amount=2000, method=Payment.METHOD_CASH, company=self.company, status=Payment.STATUS_APPROVED)
 
 
 class QuotationRequestComplianceTests(TestCase):
@@ -408,3 +423,193 @@ class SupplierEnhancementTests(TestCase):
         self.assertContains(resp, 'select2')
 
 
+
+class PurchaseRequisitionTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='PRCo', code='PR')
+        self.user = User.objects.create_user(username='req', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = [
+            'add_purchaserequisition', 'view_purchaserequisition', 'approve_purchaserequisition',
+            'add_productcategory', 'add_productunit', 'add_product'
+        ]
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='req', password='pass')
+        self.unit = ProductUnit.objects.create(code='PCS', name='Pieces')
+        self.cat = ProductCategory.objects.create(name='Cat', company=self.company)
+        self.product = Product.objects.create(name='Item', sku='IT1', unit=self.unit, company=self.company, category=self.cat)
+
+    def test_create_and_approve_requisition(self):
+        resp = self.client.post(reverse('requisition_add'), {
+            'number': 'PR1',
+            'product': self.product.id,
+            'quantity': '1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        pr = PurchaseRequisition.objects.get(number='PR1')
+        self.assertEqual(pr.status, PurchaseRequisition.PENDING)
+        resp = self.client.post(reverse('requisition_approve', args=[pr.id]), {
+            'action': 'approve'
+        })
+        self.assertEqual(resp.status_code, 302)
+        pr.refresh_from_db()
+        self.assertEqual(pr.status, PurchaseRequisition.APPROVED)
+
+
+class ProcurementExtrasTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='EXCo', code='EX')
+        self.user = User.objects.create_user(username='ex', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = [
+            'add_quotationrequest', 'add_purchaseorder', 'add_supplierinvoice',
+            'add_payment', 'approve_payment', 'view_payment',
+            'add_productcategory', 'add_productunit', 'add_product',
+        ]
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='ex', password='pass')
+        self.unit = ProductUnit.objects.create(code='PCS', name='Pieces')
+        self.cat = ProductCategory.objects.create(name='Cat', company=self.company)
+        self.product = Product.objects.create(name='Item', sku='IT2', unit=self.unit, company=self.company, category=self.cat, sale_price=10)
+        self.supplier = Supplier.objects.create(name='Sup', contact_person='CP', phone='+111', email='s@e.com', company=self.company)
+        for code in ['Inventory', 'Supplier', 'Cash']:
+            LedgerAccount.objects.create(code=code, name=code, company=self.company)
+        from ledger.utils import post_entry
+        post_entry(self.company, 'open cash', [('Cash', 100, 0)])
+
+    def test_select_quotation_creates_po(self):
+        resp = self.client.post(reverse('quotation_add'), {
+            'number': 'Q1', 'supplier': self.supplier.id, 'product': self.product.id,
+            'quantity': '1', 'unit_price': '8'
+        })
+        line = QuotationRequestLine.objects.first()
+        self.client.post(reverse('quotation_select', args=[line.id]))
+        self.assertTrue(PurchaseOrder.objects.filter(supplier=self.supplier).exists())
+
+    def test_invoice_match_view(self):
+        po = PurchaseOrder.objects.create(order_number='PO99', supplier=self.supplier, company=self.company)
+        PurchaseOrderLine.objects.create(purchase_order=po, product=self.product, quantity=1, unit_price=10)
+        GoodsReceipt.objects.create(purchase_order=po, product=self.product, qty_received=1, warehouse=Warehouse.objects.create(name='W', location='A', company=self.company), ean='', serial='S1')
+        inv = SupplierInvoice.objects.create(number='INV1', purchase_order=po, amount=10, company=self.company)
+        resp = self.client.get(reverse('invoice_match', args=[inv.id]))
+        self.assertContains(resp, 'All documents match')
+
+    def test_payment_approval_posts_ledger(self):
+        for code in ['Supplier', 'Cash']:
+            LedgerAccount.objects.get_or_create(code=code, name=code, company=self.company)
+        Payment.objects.create(purchase_order=None, amount=5, method=Payment.METHOD_CASH, company=self.company)
+        payment = Payment.objects.first()
+        resp = self.client.post(reverse('payment_approve', args=[payment.id]), {'action': 'approve'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(payment.approvals.count(), 1)
+
+
+class ProcurementCycleIntegrationTests(TestCase):
+    """Integration test covering the full procurement cycle."""
+
+    def setUp(self):
+        self.company = Company.objects.create(name='FlowCo', code='FC')
+        self.user = User.objects.create_user(
+            username='proc', password='pass', company=self.company
+        )
+        role = Role.objects.get(name='Admin')
+        perms = [
+            'add_purchaserequisition', 'approve_purchaserequisition',
+            'add_quotationrequest', 'add_purchaseorder', 'ack_purchaseorder',
+            'add_goodsreceipt', 'add_supplierinvoice', 'view_supplierinvoice',
+            'add_payment', 'approve_payment', 'view_payment',
+            'add_productcategory', 'add_productunit', 'add_product',
+        ]
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='proc', password='pass')
+
+        self.unit = ProductUnit.objects.create(code='PCS', name='Pieces')
+        self.cat = ProductCategory.objects.create(name='Cat', company=self.company)
+        self.product = Product.objects.create(
+            name='Item', sku='IT3', unit=self.unit,
+            company=self.company, category=self.cat, sale_price=8,
+            barcode='1234567890123'
+        )
+        self.supplier = Supplier.objects.create(
+            name='Sup', contact_person='CP', phone='+123',
+            email='sup@example.com', company=self.company
+        )
+        for code in ['Inventory', 'Supplier', 'Supplier Advance', 'Cash']:
+            LedgerAccount.objects.create(code=code, name=code, company=self.company)
+        from ledger.utils import post_entry
+        post_entry(self.company, 'open cash', [('Cash', 100, 0)])
+
+    def test_full_procurement_flow(self):
+        # 1. Create requisition
+        self.client.post(reverse('requisition_add'), {
+            'number': 'PR1', 'product': self.product.id, 'quantity': '1'
+        })
+        pr = PurchaseRequisition.objects.get(number='PR1')
+        self.assertEqual(pr.status, PurchaseRequisition.PENDING)
+
+        # 2. Approve requisition
+        self.client.post(reverse('requisition_approve', args=[pr.id]), {'action': 'approve'})
+        pr.refresh_from_db()
+        self.assertEqual(pr.status, PurchaseRequisition.APPROVED)
+
+        # 3. Request quotation
+        self.client.post(reverse('quotation_add'), {
+            'number': 'Q1', 'supplier': self.supplier.id,
+            'product': self.product.id, 'quantity': '1', 'unit_price': '8'
+        })
+        line = QuotationRequestLine.objects.first()
+
+        # 4. Select quotation to create PO
+        self.client.post(reverse('quotation_select', args=[line.id]))
+        po = PurchaseOrder.objects.first()
+        self.assertIsNotNone(po)
+
+        # 5. Acknowledge PO
+        self.client.post(reverse('purchase_order_ack', args=[po.id]))
+        po.refresh_from_db()
+        self.assertTrue(po.acknowledged)
+
+        # 6. Goods receipt
+        wh = Warehouse.objects.create(name='Main', location='A', company=self.company)
+        line_obj = po.lines.first()
+        self.client.post(reverse('goods_receipt_add', args=[po.id, line_obj.id]), {
+            'qty': '1', 'ean': self.product.barcode, 'serial': 'S1', 'warehouse': wh.id
+        })
+        self.assertEqual(GoodsReceipt.objects.filter(purchase_order=po).count(), 1)
+
+        # 7. Supplier invoice
+        self.client.post(reverse('invoice_add'), {
+            'number': 'INV1', 'po': po.id, 'amount': '8'
+        })
+        invoice = SupplierInvoice.objects.get(number='INV1')
+
+        # 8. Three-way match check
+        resp = self.client.get(reverse('invoice_match', args=[invoice.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'All documents match')
+
+        # 9. Create payment
+        self.client.post(reverse('payment_add'), {
+            'po': po.id, 'amount': '8', 'method': Payment.METHOD_CASH
+        })
+        payment = Payment.objects.get(purchase_order=po)
+        self.assertEqual(payment.status, Payment.STATUS_PENDING)
+
+        # 10. Approve payment
+        self.client.post(reverse('payment_approve', args=[payment.id]), {'action': 'approve'})
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.STATUS_APPROVED)
+        self.assertEqual(payment.approvals.count(), 1)
+
+        # 11. Ledger entries created
+        entries = LedgerEntry.objects.filter(company=self.company)
+        self.assertGreaterEqual(entries.count(), 3)

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Supplier Invoices{% endblock %}
+{% block content %}
+<h2>Supplier Invoices</h2>
+<a class="btn btn-primary mb-3" href="{% url 'invoice_add' %}">Add Invoice</a>
+<table class="table">
+  <thead><tr><th>Number</th><th>PO</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for inv in invoices %}
+    <tr>
+      <td>{{ inv.number }}</td>
+      <td>{{ inv.purchase_order.order_number }}</td>
+      <td>{{ inv.amount }}</td>
+      <td>{{ inv.get_status_display }}</td>
+      <td><a class="btn btn-sm btn-secondary" href="{% url 'invoice_match' inv.id %}">Match</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No invoices</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

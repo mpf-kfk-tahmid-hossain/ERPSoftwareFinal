@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}New Purchase Requisition{% endblock %}
+{% block content %}
+<h2>New Purchase Requisition</h2>
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label" for="id_number">Number</label>
+    <input type="text" name="number" id="id_number" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_product">Product</label>
+    <select name="product" id="id_product" class="form-select" required>
+      <option value="">----</option>
+      {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_quantity">Quantity</label>
+    <input type="number" step="any" name="quantity" id="id_quantity" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_spec">Specification</label>
+    <input type="text" name="specification" id="id_spec" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_just">Justification</label>
+    <textarea name="justification" id="id_just" class="form-control"></textarea>
+  </div>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <button type="submit" class="btn btn-success">Submit</button>
+</form>
+{% endblock %}

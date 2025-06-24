@@ -4,6 +4,7 @@ from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.contrib import messages
+from django.utils import timezone
 import random
 from accounts.utils import (
     AdvancedListMixin,
@@ -18,8 +19,14 @@ from .models import (
     PurchaseOrder,
     PurchaseOrderLine,
     GoodsReceipt,
+    Payment,
+    PaymentApproval,
+    SupplierInvoice,
+    SupplierEvaluation,
     QuotationRequest,
     QuotationRequestLine,
+    PurchaseRequisition,
+    PurchaseRequisitionApproval,
 )
 from .utils import (
     validate_phone,
@@ -371,6 +378,7 @@ class PurchaseOrderDetailView(LoginRequiredMixin, TemplateView):
         po = get_object_or_404(PurchaseOrder, pk=self.kwargs['pk'], company=self.request.user.company)
         context['po'] = po
         context['can_receive'] = user_has_permission(self.request.user, 'add_goodsreceipt')
+        context['can_ack'] = user_has_permission(self.request.user, 'ack_purchaseorder') and not po.acknowledged
         return context
 
 
@@ -413,6 +421,26 @@ class GoodsReceiptCreateView(LoginRequiredMixin, View):
         return redirect('purchase_order_detail', pk=line.purchase_order.pk)
 
 
+@method_decorator(require_permission('ack_purchaseorder'), name='dispatch')
+class PurchaseOrderAcknowledgeView(LoginRequiredMixin, View):
+    """Mark purchase order as acknowledged by supplier."""
+
+    def post(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk, company=request.user.company)
+        if not po.acknowledged:
+            po.acknowledged = True
+            po.acknowledged_at = timezone.now()
+            po.save()
+            send_mail(
+                'PO Acknowledged',
+                f'Purchase order {po.order_number} acknowledged',
+                'noreply@example.com',
+                [request.user.email],
+                fail_silently=True,
+            )
+        return redirect('purchase_order_detail', pk=pk)
+
+
 @method_decorator(require_permission('add_quotationrequest'), name='dispatch')
 class QuotationRequestCreateView(LoginRequiredMixin, View):
     """Create a quotation request ensuring identifier compliance."""
@@ -447,6 +475,7 @@ class QuotationRequestCreateView(LoginRequiredMixin, View):
             Product, pk=request.POST.get('product'), company=request.user.company
         )
         qty = request.POST.get('quantity', '0').strip()
+        price = request.POST.get('unit_price', '0').strip()
         ean = request.POST.get('ean', '').strip()
         serials = request.POST.get('serial_list', '').strip()
         # Identifier compliance
@@ -485,6 +514,7 @@ class QuotationRequestCreateView(LoginRequiredMixin, View):
             quotation=qr,
             product=product,
             quantity=qty or 0,
+            unit_price=price or 0,
             ean=ean,
             serial_list=serials,
         )
@@ -500,3 +530,251 @@ class BankSearchView(LoginRequiredMixin, View):
         banks = Bank.objects.filter(name__icontains=q)[:10]
         data = [{'name': b.name} for b in banks]
         return JsonResponse(data, safe=False)
+
+class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
+    template_name = 'requisition_list.html'
+    model = PurchaseRequisition
+    search_fields = ['number', 'product__name', 'requester__username']
+    filter_fields = ['status']
+    default_sort = '-created_at'
+
+    def base_queryset(self):
+        return PurchaseRequisition.objects.filter(company=self.request.user.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.get_queryset()
+        context['page_obj'] = page
+        context['search'] = True
+        context['filters'] = [
+            {
+                'name': 'status',
+                'label': 'Status',
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': PurchaseRequisition.PENDING, 'label': 'Pending'},
+                    {'val': PurchaseRequisition.APPROVED, 'label': 'Approved'},
+                    {'val': PurchaseRequisition.REJECTED, 'label': 'Rejected'},
+                ],
+                'current': self.request.GET.get('status', ''),
+            }
+        ]
+        context['sort_options'] = [
+            ('created_at', 'Date'),
+            ('number', 'Number'),
+        ]
+        context['query_string'] = self.query_string()
+        context['sort_query_string'] = self.sort_query_string()
+        context['can_add'] = user_has_permission(self.request.user, 'add_purchaserequisition')
+        return context
+
+
+@method_decorator(require_permission('add_purchaserequisition'), name='dispatch')
+class PurchaseRequisitionCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        products = Product.objects.filter(company=request.user.company)
+        return render(request, 'requisition_form.html', {'products': products})
+
+    def post(self, request):
+        number = request.POST.get('number', '').strip()
+        product_id = request.POST.get('product')
+        qty = request.POST.get('quantity', '').strip()
+        spec = request.POST.get('specification', '').strip()
+        just = request.POST.get('justification', '').strip()
+        if not number or not product_id or not qty:
+            products = Product.objects.filter(company=request.user.company)
+            return render(request, 'requisition_form.html', {'products': products, 'error': 'All fields required'})
+        if PurchaseRequisition.objects.filter(number=number, company=request.user.company).exists():
+            products = Product.objects.filter(company=request.user.company)
+            return render(request, 'requisition_form.html', {'products': products, 'error': 'Number exists'})
+        product = get_object_or_404(Product, pk=product_id, company=request.user.company)
+        pr = PurchaseRequisition.objects.create(
+            number=number,
+            product=product,
+            quantity=qty,
+            specification=spec,
+            justification=just,
+            requester=request.user,
+            status=PurchaseRequisition.PENDING,
+            company=request.user.company,
+        )
+        log_action(request.user, 'create_pr', details={'number': number}, company=request.user.company)
+        return redirect('requisition_detail', pk=pr.pk)
+
+
+class PurchaseRequisitionDetailView(LoginRequiredMixin, TemplateView):
+    template_name = 'requisition_detail.html'
+
+    def get_context_data(self, **kwargs):
+        pr = get_object_or_404(PurchaseRequisition, pk=self.kwargs['pk'], company=self.request.user.company)
+        context = super().get_context_data(**kwargs)
+        context['pr'] = pr
+        context['can_approve'] = user_has_permission(self.request.user, 'approve_purchaserequisition') and pr.status == PurchaseRequisition.PENDING
+        return context
+
+
+@method_decorator(require_permission('approve_purchaserequisition'), name='dispatch')
+class PurchaseRequisitionApproveView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        pr = get_object_or_404(PurchaseRequisition, pk=pk, company=request.user.company)
+        if pr.status != PurchaseRequisition.PENDING:
+            return redirect('requisition_detail', pk=pk)
+        action = request.POST.get('action')
+        comment = request.POST.get('comment', '').strip()
+        approved = action == 'approve'
+        pr.status = PurchaseRequisition.APPROVED if approved else PurchaseRequisition.REJECTED
+        pr.save()
+        PurchaseRequisitionApproval.objects.create(
+            requisition=pr,
+            approver=request.user,
+            approved=approved,
+            comment=comment,
+            approved_at=timezone.now(),
+        )
+        log_action(request.user, 'approve_pr', details={'id': pr.id, 'approved': approved}, company=request.user.company)
+        return redirect('requisition_detail', pk=pk)
+
+
+class QuotationComparisonView(LoginRequiredMixin, TemplateView):
+    """List quotations for comparison and allow selection."""
+
+    template_name = 'quotation_compare.html'
+
+    def get_context_data(self, **kwargs):
+        product_id = self.request.GET.get('product')
+        lines = QuotationRequestLine.objects.filter(quotation__company=self.request.user.company, selected=False)
+        if product_id:
+            lines = lines.filter(product__id=product_id)
+        lines = lines.select_related('quotation', 'product', 'quotation__supplier').order_by('unit_price')
+        products = Product.objects.filter(company=self.request.user.company)
+        return {
+            'lines': lines,
+            'products': products,
+            'product_id': int(product_id) if product_id else '',
+        }
+
+
+@method_decorator(require_permission('add_purchaseorder'), name='dispatch')
+class QuotationSelectView(LoginRequiredMixin, View):
+    """Create a PO from the chosen quotation line."""
+
+    def post(self, request, line_id):
+        line = get_object_or_404(
+            QuotationRequestLine,
+            pk=line_id,
+            quotation__company=request.user.company,
+        )
+        if line.selected:
+            return redirect('quotation_compare')
+        line.selected = True
+        line.save()
+        po = PurchaseOrder.objects.create(
+            order_number=f"PO{random.randint(1000,9999)}",
+            supplier=line.quotation.supplier,
+            company=request.user.company,
+        )
+        PurchaseOrderLine.objects.create(
+            purchase_order=po,
+            product=line.product,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+        )
+        send_mail(
+            'Quotation Selected',
+            f'PO {po.order_number} created from quotation {line.quotation.number}',
+            'noreply@example.com',
+            [request.user.email],
+            fail_silently=True,
+        )
+        return redirect('purchase_order_detail', pk=po.pk)
+
+
+class SupplierInvoiceListView(LoginRequiredMixin, TemplateView):
+    template_name = 'invoice_list.html'
+
+    def get_context_data(self, **kwargs):
+        invoices = SupplierInvoice.objects.filter(company=self.request.user.company)
+        return {'invoices': invoices}
+
+
+@method_decorator(require_permission('add_supplierinvoice'), name='dispatch')
+class SupplierInvoiceCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        pos = PurchaseOrder.objects.filter(company=request.user.company)
+        return render(request, 'invoice_form.html', {'pos': pos})
+
+    def post(self, request):
+        number = request.POST.get('number', '').strip()
+        po = get_object_or_404(PurchaseOrder, pk=request.POST.get('po'), company=request.user.company)
+        amount = request.POST.get('amount', '0').strip()
+        file = request.FILES.get('file')
+        if not number or not amount:
+            pos = PurchaseOrder.objects.filter(company=request.user.company)
+            return render(request, 'invoice_form.html', {'pos': pos, 'error': 'All fields required'})
+        inv = SupplierInvoice.objects.create(number=number, purchase_order=po, amount=amount, file=file or None, company=request.user.company)
+        send_mail('Invoice Submitted', f'Invoice {number} submitted', 'noreply@example.com', [request.user.email], fail_silently=True)
+        return redirect('invoice_list')
+
+
+class InvoiceMatchView(LoginRequiredMixin, TemplateView):
+    template_name = 'invoice_match.html'
+
+    def get_context_data(self, **kwargs):
+        invoice = get_object_or_404(SupplierInvoice, pk=self.kwargs['pk'], company=self.request.user.company)
+        po = invoice.purchase_order
+        po_total = sum(l.quantity * l.unit_price for l in po.lines.all())
+        grn_total = sum(gr.qty_received * gr.product.sale_price for gr in GoodsReceipt.objects.filter(purchase_order=po))
+        match = po_total == grn_total == float(invoice.amount)
+        return {'invoice': invoice, 'po_total': po_total, 'grn_total': grn_total, 'match': match}
+
+
+@method_decorator(require_permission('approve_payment'), name='dispatch')
+class PaymentApprovalView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        payment = get_object_or_404(Payment, pk=pk, company=request.user.company)
+        action = request.POST.get('action')
+        approved = action == 'approve'
+        payment.status = Payment.STATUS_APPROVED if approved else Payment.STATUS_REJECTED
+        payment.save()
+        PaymentApproval.objects.create(payment=payment, approver=request.user, approved=approved, comment=request.POST.get('comment', ''))
+        if approved:
+            payment.post_ledger_entry()
+        send_mail('Payment Approval', f'Payment {payment.id} {payment.status}', 'noreply@example.com', [request.user.email], fail_silently=True)
+        return redirect('payment_list')
+
+
+class PaymentListView(LoginRequiredMixin, TemplateView):
+    template_name = 'payment_list.html'
+
+    def get_context_data(self, **kwargs):
+        payments = Payment.objects.filter(company=self.request.user.company)
+        return {'payments': payments}
+
+
+@method_decorator(require_permission('add_payment'), name='dispatch')
+class PaymentCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        pos = PurchaseOrder.objects.filter(company=request.user.company)
+        return render(request, 'payment_form.html', {'pos': pos})
+
+    def post(self, request):
+        po_id = request.POST.get('po')
+        po = get_object_or_404(PurchaseOrder, pk=po_id, company=request.user.company) if po_id else None
+        amount = request.POST.get('amount', '0').strip()
+        method = request.POST.get('method', Payment.METHOD_CASH)
+        Payment.objects.create(purchase_order=po, amount=amount, method=method, company=request.user.company)
+        send_mail('Payment Request', f'Payment for {amount} submitted', 'noreply@example.com', [request.user.email], fail_silently=True)
+        return redirect('payment_list')
+
+
+@method_decorator(require_permission('add_supplierevaluation'), name='dispatch')
+class SupplierEvaluationCreateView(LoginRequiredMixin, View):
+    def get(self, request, supplier_id):
+        supplier = get_object_or_404(Supplier, pk=supplier_id, company=request.user.company)
+        return render(request, 'evaluation_form.html', {'supplier': supplier})
+
+    def post(self, request, supplier_id):
+        supplier = get_object_or_404(Supplier, pk=supplier_id, company=request.user.company)
+        score = request.POST.get('score', '').strip()
+        SupplierEvaluation.objects.create(supplier=supplier, score=score, comments=request.POST.get('comments', ''), company=request.user.company)
+        return redirect('supplier_detail', pk=supplier_id)

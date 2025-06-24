@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Three-Way Match{% endblock %}
+{% block content %}
+<h2>Three-Way Match for {{ invoice.number }}</h2>
+<ul class="list-group mb-3">
+  <li class="list-group-item">PO Total: {{ po_total }}</li>
+  <li class="list-group-item">GRN Total: {{ grn_total }}</li>
+  <li class="list-group-item">Invoice Amount: {{ invoice.amount }}</li>
+</ul>
+{% if match %}
+<div class="alert alert-success">All documents match.</div>
+{% else %}
+<div class="alert alert-danger">Discrepancy detected!</div>
+{% endif %}
+{% endblock %}
