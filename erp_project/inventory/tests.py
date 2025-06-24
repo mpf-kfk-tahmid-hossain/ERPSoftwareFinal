@@ -208,6 +208,45 @@ class ProductFlowTests(TestCase):
         resp = self.client.get(reverse('stock_on_hand'))
         self.assertEqual(resp.status_code, 200)
 
+    def test_product_detail_view_shows_specs_and_inventory(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        product = Product.objects.create(name='Widget', sku='W99', unit=unit, company=self.company, specs={'General': {'Color': 'Red'}})
+        wh = Warehouse.objects.create(name='Main', location='A', company=self.company)
+        StockLot.objects.create(product=product, warehouse=wh, batch_number='B1', qty=7)
+        resp = self.client.get(reverse('product_detail', args=[product.id]))
+        self.assertContains(resp, 'Widget')
+        self.assertContains(resp, 'Color')
+        self.assertContains(resp, 'Red')
+        self.assertContains(resp, '7')
+
+    def test_product_quick_view_endpoint(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        product = Product.objects.create(name='Mini', sku='M1', unit=unit, company=self.company)
+        resp = self.client.get(reverse('product_quick_view', args=[product.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Mini')
+
+    def test_product_search_and_category_filter(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        cat = ProductCategory.objects.create(name='Tools', company=self.company)
+        p1 = Product.objects.create(name='Hammer', sku='H1', unit=unit, company=self.company, category=cat, specs={'General': {'Color': 'Red'}})
+        p2 = Product.objects.create(name='Drill', sku='D1', unit=unit, company=self.company, specs={'General': {'Color': 'Blue'}})
+        resp = self.client.get(reverse('product_list'), {'q': 'Red'})
+        self.assertContains(resp, 'Hammer')
+        self.assertNotContains(resp, 'Drill')
+        resp = self.client.get(reverse('product_list'), {'category': cat.id})
+        self.assertContains(resp, 'Hammer')
+        self.assertNotContains(resp, 'Drill')
+
+    def test_initial_inventory_on_create(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        wh = Warehouse.objects.create(name='Main', location='A', company=self.company)
+        self.client.post(reverse('product_add'), {
+            'name': 'Saw', 'sku': 'S1', 'unit': unit.id,
+            'init_wh': [str(wh.id)], 'init_qty': ['5']
+        })
+        self.assertTrue(StockLot.objects.filter(product__sku='S1', warehouse=wh).exists())
+
 
 class InventoryEndToEndTests(TestCase):
     """Full workflow test covering product setup and stock operations."""

@@ -234,6 +234,7 @@ After this workflow:
 | 1  | **Product Category CRUD (API + UI)**               | ✅ Implemented by Agent |
 | 2  | **Product Unit CRUD (API + UI)**                   | ✅ Implemented by Agent (now inline add in product form) |
 | 3  | **Product CRUD (API + UI)**                        | ✅ Implemented by Agent |
+| 3a | **Product Detail Page with Specs & Photos**         | ✅ Implemented by Agent |
 | 4  | **Warehouse CRUD (API + UI)**                      | ✅ Implemented by Agent |
 | 5  | **Stock Lot CRUD (API + UI)**                      | ✅ Implemented by Agent |
 | 6  | **Inventory Movement: In/Out/Transfer (API + UI)** | ✅ Implemented by Agent |
