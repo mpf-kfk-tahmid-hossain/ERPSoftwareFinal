@@ -9,18 +9,35 @@
 <table class="table">
   <thead>
     <tr>
+      <th>Image</th>
       {% include 'includes/sortable_th.html' with label='Name' field='name' %}
       {% include 'includes/sortable_th.html' with label='SKU' field='sku' %}
-      <th>Unit</th><th>Brand</th>
+      <th>Unit</th><th>Brand</th><th>Inventory</th><th></th>
     </tr>
   </thead>
   <tbody>
     {% for p in page_obj %}
     <tr>
-      <td>{{ p.name }} {% if p.is_discontinued %}<span class="badge bg-danger">❌ Discontinued</span>{% endif %}</td><td>{{ p.sku }}</td><td>{{ p.unit.name }}</td><td>{{ p.brand }}</td>
+      <td>{% if p.images.first %}<img src="{{ p.images.first.image.url }}" width="50">{% endif %}</td>
+      <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a> {% if p.is_discontinued %}<span class="badge bg-danger">❌ Discontinued</span>{% endif %}</td>
+      <td>{{ p.sku }}</td><td>{{ p.unit.name }}</td><td>{{ p.brand }}</td><td>{{ p.total_qty }}</td>
+      <td><button type="button" class="btn btn-sm btn-outline-secondary preview-btn" data-id="{{ p.id }}">Preview</button></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<div id="quick-modal-container"></div>
 {% include 'includes/pagination.html' %}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('.preview-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.id;
+    fetch(`/inventory/products/${id}/quick/`,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(r=>r.text())
+      .then(html=>{document.getElementById('quick-modal-container').innerHTML=html;});
+  });
+});
+</script>
 {% endblock %}
