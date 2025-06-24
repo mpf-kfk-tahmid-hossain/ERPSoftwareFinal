@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}Product{% endblock %}
 {% block content %}
-<h2>Add Product</h2>
-<form method="post" class="needs-validation" novalidate>
+<h2>{% if product %}Edit{% else %}Add{% endif %} Product</h2>
+<form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
   {% csrf_token %}
   <div class="mb-3">
     <label class="form-label" for="id_name">Name</label>
-    <input type="text" name="name" id="id_name" class="form-control" required>
+    <input type="text" name="name" id="id_name" class="form-control" value="{{ name }}" required>
   </div>
   <div class="mb-3">
     <label class="form-label" for="id_sku">SKU</label>
-    <input type="text" name="sku" id="id_sku" class="form-control" required>
+    <input type="text" name="sku" id="id_sku" class="form-control" value="{{ sku }}" required>
   </div>
   <div class="mb-3">
     <label class="form-label" for="id_unit">Unit</label>
@@ -18,7 +18,7 @@
       <select name="unit" id="id_unit" class="form-select" required>
         <option value="">----</option>
         {% for u in units %}
-        <option value="{{ u.id }}">{{ u.name }}</option>
+        <option value="{{ u.id }}"{% if unit_id == u.id %} selected{% endif %}>{{ u.name }}</option>
         {% endfor %}
       </select>
       {% if can_add_productunit %}
@@ -45,28 +45,43 @@
   <div id="category-selects" class="mb-3"></div>
   <div class="mb-3">
     <label for="id_brand" class="form-label">Brand</label>
-    <input type="text" name="brand" id="id_brand" class="form-control">
+    <input type="text" name="brand" id="id_brand" class="form-control" value="{{ brand }}">
   </div>
   <div class="mb-3">
     <label for="id_barcode" class="form-label">Barcode</label>
-    <input type="text" name="barcode" id="id_barcode" class="form-control">
+    <input type="text" name="barcode" id="id_barcode" class="form-control" value="{{ barcode }}">
   </div>
   <div class="row g-2">
     <div class="col">
       <label for="id_vat" class="form-label">VAT %</label>
-      <input type="text" name="vat_rate" id="id_vat" class="form-control">
+      <input type="text" name="vat_rate" id="id_vat" class="form-control" value="{{ vat_rate }}">
     </div>
     <div class="col">
       <label for="id_price" class="form-label">Sale Price</label>
-      <input type="text" name="sale_price" id="id_price" class="form-control">
+      <input type="text" name="sale_price" id="id_price" class="form-control" value="{{ sale_price }}">
     </div>
   </div>
   <div class="mb-3">
     <label for="id_description" class="form-label">Description</label>
-    <textarea name="description" id="id_description" class="form-control"></textarea>
+    <textarea name="description" id="id_description" class="form-control">{{ description }}</textarea>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Specifications</label>
+    <div id="specs-container"></div>
+    <button type="button" class="btn btn-sm btn-secondary" id="add-category-btn">Add Category</button>
+    <input type="hidden" name="specs_json" id="id_specs_json" value='{{ specs_json|escapejs }}'>
+  </div>
+  <div class="mb-3">
+    <label for="id_photos" class="form-label">Photos</label>
+    <input type="file" name="photos" id="id_photos" class="form-control" multiple>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Initial Inventory</label>
+    <div id="inv-rows"></div>
+    <button type="button" class="btn btn-sm btn-secondary" id="add-inv-row-btn">Add Warehouse</button>
   </div>
   <div class="form-check mb-3">
-    <input type="checkbox" class="form-check-input" name="track_serial" id="id_track_serial">
+    <input type="checkbox" class="form-check-input" name="track_serial" id="id_track_serial"{% if track_serial %} checked{% endif %}>
     <label for="id_track_serial" class="form-check-label">Track Serial Numbers</label>
   </div>
   {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
@@ -130,6 +145,60 @@ document.getElementById('save-unit-btn').addEventListener('click',async()=>{
     document.getElementById('unit-add-form').style.display='none';
   }
   else{alert('Error adding unit');}
+});
+
+const warehouses = JSON.parse('{{ warehouses_json|escapejs }}');
+function addInvRow(){
+  const div=document.createElement('div');
+  div.className='row g-2 mb-1 inv-row';
+  let opts='<option value="">--Select--</option>';
+  warehouses.forEach(w=>{opts+=`<option value="${w.id}">${w.name}</option>`});
+  div.innerHTML=`<div class="col"><select name="init_wh" class="form-select">${opts}</select></div><div class="col"><input type="number" step="any" name="init_qty" class="form-control" placeholder="Qty"></div><div class="col-auto"><button type="button" class="btn btn-outline-danger btn-sm remove-inv-btn">&times;</button></div>`;
+  document.getElementById('inv-rows').appendChild(div);
+}
+document.getElementById('add-inv-row-btn').addEventListener('click',addInvRow);
+document.getElementById('inv-rows').addEventListener('click',e=>{if(e.target.classList.contains('remove-inv-btn'))e.target.closest('.inv-row').remove();});
+
+function addField(catEl,key='',val=''){
+  const row=document.createElement('div');
+  row.className='field-row row g-1 mb-1';
+  row.innerHTML=`<div class="col"><input type="text" class="form-control key" placeholder="Key" value="${key}"></div><div class="col"><input type="text" class="form-control val" placeholder="Value" value="${val}"></div><div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">&times;</button></div>`;
+  catEl.querySelector('.fields').appendChild(row);
+}
+function addCategory(name='',vals){
+  const div=document.createElement('div');
+  div.className='spec-category border p-2 mb-2';
+  div.innerHTML=`<div class="d-flex mb-2"><input type="text" class="form-control me-2 cat-name" placeholder="Category" value="${name}"><button type="button" class="btn btn-sm btn-danger remove-cat-btn">&times;</button></div><div class="fields"></div><button type="button" class="btn btn-sm btn-secondary add-field-btn mb-2">Add Field</button>`;
+  document.getElementById('specs-container').appendChild(div);
+  if(vals){Object.entries(vals).forEach(([k,v])=>addField(div,k,v));}
+  return div;
+}
+function updateSpecs(){
+  const data={};
+  document.querySelectorAll('.spec-category').forEach(cat=>{
+    const cname=cat.querySelector('.cat-name').value.trim();
+    if(!cname)return;
+    const obj={};
+    cat.querySelectorAll('.field-row').forEach(row=>{
+      const key=row.querySelector('.key').value.trim();
+      const val=row.querySelector('.val').value.trim();
+      if(key)obj[key]=val;
+    });
+    data[cname]=obj;
+  });
+  document.getElementById('id_specs_json').value=JSON.stringify(data);
+}
+document.getElementById('add-category-btn').addEventListener('click',()=>{addCategory();updateSpecs();});
+document.getElementById('specs-container').addEventListener('click',e=>{
+  if(e.target.classList.contains('add-field-btn')){addField(e.target.closest('.spec-category'));}
+  if(e.target.classList.contains('remove-field-btn')){e.target.closest('.field-row').remove();}
+  if(e.target.classList.contains('remove-cat-btn')){e.target.closest('.spec-category').remove();}
+  updateSpecs();
+});
+document.getElementById('specs-container').addEventListener('input',updateSpecs);
+document.querySelector('form').addEventListener('submit',updateSpecs);
+document.addEventListener('DOMContentLoaded',()=>{
+  try{const data=JSON.parse(document.getElementById('id_specs_json').value||'{}');Object.entries(data).forEach(([c,v])=>addCategory(c,v));}catch(e){}
 });
 
 </script>

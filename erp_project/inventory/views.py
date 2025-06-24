@@ -3,7 +3,9 @@ from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 
 from django.views.generic import TemplateView, View
 from django.utils.decorators import method_decorator
-from django.db.models import Sum
+from django.db.models import Sum, F, Q, DecimalField, ExpressionWrapper, Value
+from django.db.models.functions import Coalesce
+import json
 from accounts.utils import user_has_permission
 
 from accounts.models import UserRole
@@ -14,6 +16,7 @@ from .models import (
     ProductCategory,
     ProductUnit,
     Product,
+    ProductImage,
     StockLot,
     StockMovement,
     InventoryAdjustment,
@@ -36,7 +39,15 @@ class WarehouseListView(AdvancedListMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         page = self.get_queryset()
+        inv = {}
+        for prod in page:
+            qty_lot = StockLot.objects.filter(product=prod).aggregate(q=Sum('qty'))['q'] or 0
+            qty_in = StockMovement.objects.filter(product=prod, movement_type=StockMovement.IN).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_out = StockMovement.objects.filter(product=prod, movement_type=StockMovement.OUT).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_adj = InventoryAdjustment.objects.filter(product=prod).aggregate(q=Sum('qty'))['q'] or 0
+            inv[prod.id] = qty_lot + qty_in - qty_out + qty_adj
         context['page_obj'] = page
+        context['inventory'] = inv
         context['search'] = True
         context['filters'] = []
         context['sort_options'] = [
@@ -364,13 +375,28 @@ def unit_quick_add(request):
 class ProductListView(AdvancedListMixin, TemplateView):
     template_name = 'product_list.html'
     model = Product
-    search_fields = ['name', 'sku', 'brand']
+    search_fields = ['name', 'sku', 'brand', 'specs']
+    filter_fields = ['category']
     default_sort = 'name'
 
     def base_queryset(self):
         qs = Product.objects.filter(company=self.request.user.company)
         if self.request.GET.get('show') != 'all':
             qs = qs.filter(is_discontinued=False)
+        stock = self.request.GET.get('stock')
+        qs = qs.annotate(
+            lot_qty=Coalesce(Sum('stocklot__qty'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            in_qty=Coalesce(Sum('stockmovement__quantity', filter=Q(stockmovement__movement_type=StockMovement.IN)), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            out_qty=Coalesce(Sum('stockmovement__quantity', filter=Q(stockmovement__movement_type=StockMovement.OUT)), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            adj_qty=Coalesce(Sum('inventoryadjustment__qty'), Value(0), output_field=DecimalField(max_digits=10, decimal_places=2)),
+        ).annotate(total_qty=ExpressionWrapper(
+            F('lot_qty') + F('in_qty') - F('out_qty') + F('adj_qty'),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        ))
+        if stock == 'in':
+            qs = qs.filter(total_qty__gt=0)
+        elif stock == 'out':
+            qs = qs.filter(total_qty__lte=0)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -378,7 +404,25 @@ class ProductListView(AdvancedListMixin, TemplateView):
         page = self.get_queryset()
         context['page_obj'] = page
         context['search'] = True
-        context['filters'] = []
+        cats = ProductCategory.objects.filter(company=self.request.user.company)
+        context['filters'] = [
+            {
+                'name': 'category',
+                'label': 'Category',
+                'options': [{'val': '', 'label': 'All'}] + [{'val': c.id, 'label': c.full_path} for c in cats],
+                'current': self.request.GET.get('category', '')
+            },
+            {
+                'name': 'stock',
+                'label': 'Stock',
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': 'in', 'label': 'In Stock'},
+                    {'val': 'out', 'label': 'Out of Stock'},
+                ],
+                'current': self.request.GET.get('stock', '')
+            }
+        ]
         context['sort_options'] = [('name', 'Name'), ('sku', 'SKU')]
         context['query_string'] = self.query_string()
         context['sort_query_string'] = self.sort_query_string()
@@ -386,19 +430,77 @@ class ProductListView(AdvancedListMixin, TemplateView):
         return context
 
 
+@method_decorator(require_permission('view_product'), name='dispatch')
+class ProductDetailView(TemplateView):
+    """Display product details with inventory and specs."""
+
+    template_name = 'product_detail.html'
+
+    def get_context_data(self, **kwargs):
+        product = get_object_or_404(Product, pk=self.kwargs['pk'], company=self.request.user.company)
+        total = 0
+        per_wh = []
+        warehouses = Warehouse.objects.filter(company=self.request.user.company)
+        for wh in warehouses:
+            qty_lot = StockLot.objects.filter(product=product, warehouse=wh).aggregate(q=Sum('qty'))['q'] or 0
+            qty_in = StockMovement.objects.filter(product=product, warehouse=wh, movement_type=StockMovement.IN).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_out = StockMovement.objects.filter(product=product, warehouse=wh, movement_type=StockMovement.OUT).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_adj = InventoryAdjustment.objects.filter(product=product, warehouse=wh).aggregate(q=Sum('qty'))['q'] or 0
+            qty = qty_lot + qty_in - qty_out + qty_adj
+            if qty:
+                per_wh.append({'warehouse': wh, 'qty': qty})
+            total += qty
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'product': product,
+            'images': product.images.all(),
+            'specs': product.specs or {},
+            'total_qty': total,
+            'warehouse_data': per_wh,
+            'can_requisition': user_has_permission(self.request.user, 'add_purchaserequisition'),
+        })
+        return context
+
+
+@method_decorator(require_permission('view_product'), name='dispatch')
+class ProductQuickView(TemplateView):
+    """Return modal snippet for product preview."""
+
+    template_name = 'product_quick_view.html'
+
+    def get_context_data(self, **kwargs):
+        product = get_object_or_404(Product, pk=self.kwargs['pk'], company=self.request.user.company)
+        image = product.images.first()
+        context = super().get_context_data(**kwargs)
+        context.update({'product': product, 'image': image})
+        return context
+
 @method_decorator(require_permission('add_product'), name='dispatch')
 class ProductCreateView(View):
     def get(self, request):
         units = ProductUnit.objects.all()
         can_add_productunit = user_has_permission(request.user, 'add_productunit')
+        warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
         return render(
-            request, 
-            'product_form.html', 
+            request,
+            'product_form.html',
             {
                 'units': units,
                 'can_add_productunit': can_add_productunit,
+                'warehouses_json': json.dumps(warehouses),
+                'product': None,
+                'name': '',
+                'sku': '',
+                'unit_id': '',
+                'brand': '',
+                'barcode': '',
+                'vat_rate': '',
+                'sale_price': '',
+                'description': '',
+                'specs_json': '{}',
+                'track_serial': False,
             }
-            )
+        )
 
     def post(self, request):
         name = request.POST.get('name', '').strip()
@@ -407,7 +509,25 @@ class ProductCreateView(View):
         unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
         if not name or not sku or not unit:
             units = ProductUnit.objects.all()
-            return render(request, 'product_form.html', {'error': 'All fields required', 'units': units})
+            warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+            context = {
+                'error': 'All fields required',
+                'units': units,
+                'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
+                'warehouses_json': json.dumps(warehouses),
+                'name': name,
+                'sku': sku,
+                'unit_id': unit_id,
+                'brand': request.POST.get('brand', '').strip(),
+                'barcode': request.POST.get('barcode', '').strip(),
+                'vat_rate': request.POST.get('vat_rate'),
+                'sale_price': request.POST.get('sale_price'),
+                'description': request.POST.get('description', ''),
+                'specs_json': request.POST.get('specs_json', '{}'),
+                'track_serial': bool(request.POST.get('track_serial')),
+                'product': None,
+            }
+            return render(request, 'product_form.html', context)
         brand = request.POST.get('brand', '').strip()
         cat_id = request.POST.get('category')
         category = None
@@ -417,7 +537,33 @@ class ProductCreateView(View):
                 units = ProductUnit.objects.all()
                 err = 'Category must be a leaf node'
                 return render(request, 'product_form.html', {'error': err, 'units': units})
-        Product.objects.create(
+        specs_raw = request.POST.get('specs_json', '').strip()
+        try:
+            specs = json.loads(specs_raw) if specs_raw else {}
+            if not isinstance(specs, dict):
+                raise ValueError
+        except ValueError:
+            units = ProductUnit.objects.all()
+            warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+            context = {
+                'error': 'Invalid specs JSON',
+                'units': units,
+                'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
+                'warehouses_json': json.dumps(warehouses),
+                'name': name,
+                'sku': sku,
+                'unit_id': unit_id,
+                'brand': brand,
+                'barcode': request.POST.get('barcode', '').strip(),
+                'vat_rate': request.POST.get('vat_rate'),
+                'sale_price': request.POST.get('sale_price'),
+                'description': request.POST.get('description', ''),
+                'specs_json': specs_raw,
+                'track_serial': bool(request.POST.get('track_serial')),
+                'product': None,
+            }
+            return render(request, 'product_form.html', context)
+        product = Product.objects.create(
             name=name,
             sku=sku,
             unit=unit,
@@ -428,10 +574,133 @@ class ProductCreateView(View):
             vat_rate=request.POST.get('vat_rate') or 0,
             sale_price=request.POST.get('sale_price') or 0,
             description=request.POST.get('description', '').strip(),
-            track_serial=bool(request.POST.get('track_serial'))
+            track_serial=bool(request.POST.get('track_serial')),
+            specs=specs
         )
+        wh_ids = request.POST.getlist('init_wh')
+        qtys = request.POST.getlist('init_qty')
+        for wid, qty in zip(wh_ids, qtys):
+            if wid and qty:
+                warehouse = get_object_or_404(Warehouse, pk=wid, company=request.user.company)
+                StockLot.objects.create(product=product, warehouse=warehouse, batch_number='INIT', qty=qty)
+        for img in request.FILES.getlist('photos'):
+            ProductImage.objects.create(product=product, image=img)
         log_action(request.user, 'create_product', details={'sku': sku}, company=request.user.company)
         return redirect('product_list')
+
+
+@method_decorator(require_permission('change_product'), name='dispatch')
+class ProductUpdateView(View):
+    def get_object(self, pk, user):
+        return get_object_or_404(Product, pk=pk, company=user.company)
+
+    def get(self, request, pk):
+        product = self.get_object(pk, request.user)
+        units = ProductUnit.objects.all()
+        can_add_productunit = user_has_permission(request.user, 'add_productunit')
+        warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+        context = {
+            'units': units,
+            'can_add_productunit': can_add_productunit,
+            'warehouses_json': json.dumps(warehouses),
+            'product': product,
+            'name': product.name,
+            'sku': product.sku,
+            'unit_id': product.unit_id,
+            'brand': product.brand,
+            'barcode': product.barcode,
+            'vat_rate': product.vat_rate,
+            'sale_price': product.sale_price,
+            'description': product.description,
+            'specs_json': json.dumps(product.specs, indent=2),
+            'track_serial': product.track_serial,
+        }
+        return render(request, 'product_form.html', context)
+
+    def post(self, request, pk):
+        product = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        sku = request.POST.get('sku', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not sku or not unit:
+            units = ProductUnit.objects.all()
+            warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+            context = {
+                'error': 'All fields required',
+                'units': units,
+                'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
+                'warehouses_json': json.dumps(warehouses),
+                'name': name,
+                'sku': sku,
+                'unit_id': unit_id,
+                'brand': request.POST.get('brand', '').strip(),
+                'barcode': request.POST.get('barcode', '').strip(),
+                'vat_rate': request.POST.get('vat_rate'),
+                'sale_price': request.POST.get('sale_price'),
+                'description': request.POST.get('description', ''),
+                'specs_json': request.POST.get('specs_json', '{}'),
+                'track_serial': bool(request.POST.get('track_serial')),
+                'product': product,
+            }
+            return render(request, 'product_form.html', context)
+        specs_raw = request.POST.get('specs_json', '').strip()
+        try:
+            specs = json.loads(specs_raw) if specs_raw else {}
+            if not isinstance(specs, dict):
+                raise ValueError
+        except ValueError:
+            units = ProductUnit.objects.all()
+            warehouses = list(Warehouse.objects.filter(company=request.user.company).values('id', 'name'))
+            context = {
+                'error': 'Invalid specs JSON',
+                'units': units,
+                'can_add_productunit': user_has_permission(request.user, 'add_productunit'),
+                'warehouses_json': json.dumps(warehouses),
+                'name': name,
+                'sku': sku,
+                'unit_id': unit_id,
+                'brand': request.POST.get('brand', '').strip(),
+                'barcode': request.POST.get('barcode', '').strip(),
+                'vat_rate': request.POST.get('vat_rate'),
+                'sale_price': request.POST.get('sale_price'),
+                'description': request.POST.get('description', ''),
+                'specs_json': specs_raw,
+                'track_serial': bool(request.POST.get('track_serial')),
+                'product': product,
+            }
+            return render(request, 'product_form.html', context)
+        product.name = name
+        product.sku = sku
+        product.unit = unit
+        product.brand = request.POST.get('brand', '').strip()
+        product.category = None
+        cat_id = request.POST.get('category')
+        if cat_id:
+            category = get_object_or_404(ProductCategory, pk=cat_id, company=request.user.company)
+            if ProductCategory.objects.filter(parent=category).exists():
+                units = ProductUnit.objects.all()
+                err = 'Category must be a leaf node'
+                context = {'error': err, 'units': units, 'product': product}
+                return render(request, 'product_form.html', context)
+            product.category = category
+        product.barcode = request.POST.get('barcode', '').strip()
+        product.vat_rate = request.POST.get('vat_rate') or 0
+        product.sale_price = request.POST.get('sale_price') or 0
+        product.description = request.POST.get('description', '').strip()
+        product.track_serial = bool(request.POST.get('track_serial'))
+        product.specs = specs
+        product.save()
+        wh_ids = request.POST.getlist('init_wh')
+        qtys = request.POST.getlist('init_qty')
+        for wid, qty in zip(wh_ids, qtys):
+            if wid and qty:
+                warehouse = get_object_or_404(Warehouse, pk=wid, company=request.user.company)
+                StockLot.objects.create(product=product, warehouse=warehouse, batch_number='INIT', qty=qty)
+        for img in request.FILES.getlist('photos'):
+            ProductImage.objects.create(product=product, image=img)
+        log_action(request.user, 'update_product', details={'id': product.id}, company=request.user.company)
+        return redirect('product_detail', pk=product.id)
 
 
 @method_decorator(require_permission('view_stocklot'), name='dispatch')

@@ -84,6 +84,24 @@
 - **Auth:** `add_product`
 - **Payload:** `name`, `sku`, `unit`, `category` (opt), `brand`, `barcode`, `description`
 
+## Product Detail
+- **URL:** `/inventory/products/<id>/`
+- **Method:** `GET`
+- **Auth:** `view_product`
+- **Response:** Product info, photos, specs and inventory data
+
+## Product Quick View
+- **URL:** `/inventory/products/<id>/quick/`
+- **Method:** `GET`
+- **Auth:** `view_product`
+- **Response:** HTML snippet of product preview modal
+
+## Update Product
+- **URL:** `/inventory/products/<id>/edit/`
+- **Method:** `POST`
+- **Auth:** `change_product`
+- **Payload:** same as Add Product plus `specs_json` and optional `photos` files
+
 ## Stock On Hand
 - **URL:** `/inventory/stock-on-hand/`
 - **Method:** `GET`

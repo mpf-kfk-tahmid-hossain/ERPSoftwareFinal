@@ -1,0 +1,20 @@
+{% load permissions_tags %}
+<div class="modal" id="quickModal" style="display:block;" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ product.name }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        {% if image %}<img src="{{ image.image.url }}" class="img-fluid mb-2">{% endif %}
+        <p>{{ product.description }}</p>
+      </div>
+      <div class="modal-footer">
+        <a href="{% url 'product_detail' product.id %}" class="btn btn-primary">View</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>new bootstrap.Modal(document.getElementById('quickModal')).show();</script>

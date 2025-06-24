@@ -75,9 +75,17 @@ class Product(models.Model):
     track_serial = models.BooleanField(default=False)
     vat_rate = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    specs = models.JSONField(default=dict, blank=True)
 
     def __str__(self) -> str:
         return self.name
+
+
+class ProductImage(models.Model):
+    """Photo attached to a product."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='product_photos/')
 
 
 class StockLot(models.Model):
