@@ -472,6 +472,16 @@ class PurchaseRequisitionTests(TestCase):
         pr = PurchaseRequisition.objects.get(number='PR2')
         self.assertEqual(len(pr.items), 1)
 
+    def test_requisition_form_get_contains_json(self):
+        resp = self.client.get(reverse('requisition_add'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'prod-data')
+
+    def test_requisition_form_has_help_and_summary(self):
+        resp = self.client.get(reverse('requisition_add'))
+        self.assertContains(resp, 'Use this form to request')
+        self.assertContains(resp, 'summary-text')
+
 
 class ProcurementExtrasTests(TestCase):
     def setUp(self):

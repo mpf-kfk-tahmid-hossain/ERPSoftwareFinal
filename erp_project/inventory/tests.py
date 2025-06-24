@@ -244,9 +244,22 @@ class ProductFlowTests(TestCase):
     def test_product_quick_view_endpoint(self):
         unit = ProductUnit.objects.create(code='BX', name='Box')
         product = Product.objects.create(name='Mini', sku='M1', unit=unit, company=self.company)
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        img = SimpleUploadedFile('a.jpg', b'abc', content_type='image/jpeg')
+        ProductImage.objects.create(product=product, image=img)
         resp = self.client.get(reverse('product_quick_view', args=[product.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Mini')
+        self.assertContains(resp, 'quickCarousel')
+
+    def test_product_detail_has_carousel(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        product = Product.objects.create(name='Wide', sku='W1', unit=unit, company=self.company)
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        img = SimpleUploadedFile('b.jpg', b'abc', content_type='image/jpeg')
+        ProductImage.objects.create(product=product, image=img)
+        resp = self.client.get(reverse('product_detail', args=[product.id]))
+        self.assertContains(resp, 'carouselProduct')
 
     def test_product_search_and_category_filter(self):
         unit = ProductUnit.objects.create(code='BX', name='Box')
@@ -432,6 +445,8 @@ class ProductImagePermissionTests(TestCase):
         role = Role.objects.get(name='Admin')
         perm, _ = Permission.objects.get_or_create(codename='can_edit_product_images')
         role.permissions.add(perm)
+        perm_view, _ = Permission.objects.get_or_create(codename='view_product')
+        role.permissions.add(perm_view)
         UserRole.objects.create(user=self.user, role=role, company=self.company)
         self.client.login(username='img', password='pass')
         unit = ProductUnit.objects.create(code='PCS', name='Pieces')
@@ -447,4 +462,15 @@ class ProductImagePermissionTests(TestCase):
         resp = self.client.post(reverse('product_image_delete', args=[pi.id]))
         self.assertEqual(resp.status_code, 302)
         self.assertFalse(ProductImage.objects.exists())
+
+    def test_product_detail_many_images(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        product = Product.objects.create(name='Many', sku='M2', unit=unit, company=self.company)
+        for i in range(21):
+            img = SimpleUploadedFile(f'i{i}.jpg', b'abc', content_type='image/jpeg')
+            ProductImage.objects.create(product=product, image=img)
+        resp = self.client.get(reverse('product_detail', args=[product.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertGreaterEqual(resp.content.decode().count('carousel-item'), 20)
 
