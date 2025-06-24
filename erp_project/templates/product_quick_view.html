@@ -7,7 +7,37 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        {% if image %}<img src="{{ image.image.url }}" class="img-fluid mb-2">{% endif %}
+        {% if images %}
+        <div id="quickCarousel" class="carousel slide mb-2">
+          <div class="carousel-inner">
+            {% for img in images %}
+            <div class="carousel-item{% if forloop.first %} active{% endif %}">
+              <img src="{{ img.image.url }}" class="d-block w-100 position-relative">
+              {% if can_edit_images %}
+              <form method="post" action="{% url 'product_image_delete' img.id %}" class="position-absolute top-0 end-0 m-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete image?');">🗑</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#quickCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
+          <button class="carousel-control-next" type="button" data-bs-target="#quickCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+        </div>
+        <div class="d-flex gap-2 overflow-auto mb-2">
+          {% for img in images %}
+          <img src="{{ img.image.url }}" width="50" class="img-thumbnail" data-bs-target="#quickCarousel" data-bs-slide-to="{{ forloop.counter0 }}">
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if can_edit_images %}
+        <form method="post" action="{% url 'product_image_add' product.id %}" enctype="multipart/form-data" class="mb-2">
+          {% csrf_token %}
+          <input type="file" name="photos" multiple class="form-control mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">Add Images</button>
+        </form>
+        {% endif %}
         <p>{{ product.description }}</p>
       </div>
       <div class="modal-footer">

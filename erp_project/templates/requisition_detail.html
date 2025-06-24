@@ -3,11 +3,21 @@
 {% block content %}
 <h2>Requisition {{ pr.number }}</h2>
 <ul class="list-group mb-3">
-  <li class="list-group-item">Product: {{ pr.product.name }}</li>
-  <li class="list-group-item">Quantity: {{ pr.quantity }}</li>
-  <li class="list-group-item">Specification: {{ pr.specification }}</li>
-  <li class="list-group-item">Justification: {{ pr.justification }}</li>
   <li class="list-group-item">Status: {{ pr.get_status_display }}</li>
+  <li class="list-group-item">Justification: {{ pr.justification }}</li>
+  {% if pr.items %}
+  <li class="list-group-item">
+    <strong>Items</strong>
+    <ul class="mb-0">
+      {% for item in pr.items %}
+      <li>{{ item.type }} - {{ item.description }} ({{ item.quantity }})</li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% else %}
+  <li class="list-group-item">Product: {{ pr.product.name }} ({{ pr.quantity }})</li>
+  <li class="list-group-item">Specification: {{ pr.specification }}</li>
+  {% endif %}
 </ul>
 {% if can_approve %}
 <form method="post" class="mb-3">

@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.test import TestCase
+import json
 from django.contrib.auth import get_user_model
 from accounts.models import Company, Role, UserRole, Permission
 from inventory.models import (
@@ -457,6 +458,19 @@ class PurchaseRequisitionTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         pr.refresh_from_db()
         self.assertEqual(pr.status, PurchaseRequisition.APPROVED)
+
+    def test_requisition_multiple_lines(self):
+        data = [{"type": "Service", "description": "Install", "quantity": "1", "unit": "job"}]
+        resp = self.client.post(reverse('requisition_add'), {
+            'number': 'PR2',
+            'product': self.product.id,
+            'quantity': '1',
+            'items_json': json.dumps(data),
+            'justification': 'Need service'
+        })
+        self.assertEqual(resp.status_code, 302)
+        pr = PurchaseRequisition.objects.get(number='PR2')
+        self.assertEqual(len(pr.items), 1)
 
 
 class ProcurementExtrasTests(TestCase):
