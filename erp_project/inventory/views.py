@@ -40,12 +40,12 @@ class WarehouseListView(AdvancedListMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         page = self.get_queryset()
         inv = {}
-        for prod in page:
-            qty_lot = StockLot.objects.filter(product=prod).aggregate(q=Sum('qty'))['q'] or 0
-            qty_in = StockMovement.objects.filter(product=prod, movement_type=StockMovement.IN).aggregate(q=Sum('quantity'))['q'] or 0
-            qty_out = StockMovement.objects.filter(product=prod, movement_type=StockMovement.OUT).aggregate(q=Sum('quantity'))['q'] or 0
-            qty_adj = InventoryAdjustment.objects.filter(product=prod).aggregate(q=Sum('qty'))['q'] or 0
-            inv[prod.id] = qty_lot + qty_in - qty_out + qty_adj
+        for wh in page:
+            qty_lot = StockLot.objects.filter(warehouse=wh).aggregate(q=Sum('qty'))['q'] or 0
+            qty_in = StockMovement.objects.filter(warehouse=wh, movement_type=StockMovement.IN).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_out = StockMovement.objects.filter(warehouse=wh, movement_type=StockMovement.OUT).aggregate(q=Sum('quantity'))['q'] or 0
+            qty_adj = InventoryAdjustment.objects.filter(warehouse=wh).aggregate(q=Sum('qty'))['q'] or 0
+            inv[wh.id] = qty_lot + qty_in - qty_out + qty_adj
         context['page_obj'] = page
         context['inventory'] = inv
         context['search'] = True

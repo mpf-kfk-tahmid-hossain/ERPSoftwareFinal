@@ -45,6 +45,14 @@ class WarehouseViewTests(TestCase):
         self.assertContains(resp, 'value="EditW"')
         self.assertContains(resp, 'value="Loc"')
 
+    def test_warehouse_list_with_products(self):
+        """Warehouse list view should render even when products exist."""
+        Warehouse.objects.create(name='ListW', location='Loc', company=self.company)
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        Product.objects.create(name='Item', unit=unit, company=self.company)
+        resp = self.client.get(reverse('warehouse_list'))
+        self.assertEqual(resp.status_code, 200)
+
 
 class CategoryViewTests(TestCase):
     def setUp(self):
