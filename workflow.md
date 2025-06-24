@@ -417,3 +417,159 @@ This workflow governs the full onboarding and financial lifecycle of high-value 
 * Supplier list now supports search, filters, pagination and sorting.
 
 ---
+
+Here is your **Procurement Workflow** written in the same style and structure as `workflow.md` (actors, steps, purpose, checklist). This follows your requested level of detail and is suitable for a robust ERP implementation.
+
+---
+
+# Workflow
+
+## **Workflow Description: Procurement Cycle (Requisition to Payment with Three-Way Match)**
+
+### **Purpose**
+
+This workflow standardizes how a company manages the procurement of goods and services—from identifying needs to paying suppliers. It ensures every purchase is justified, approved, traceable, and auditable. The process enforces *three-way matching* (PO, GRN, Invoice) for financial control, reduces fraud, and improves operational efficiency.
+
+---
+
+### **Actors**
+
+* **Requestor**: Any user who identifies a need and submits a Purchase Requisition (PR).
+* **Department Manager**: Reviews and approves PRs within their department.
+* **Procurement Officer**: Sources suppliers, manages quotations, and issues Purchase Orders (POs).
+* **Supplier**: Provides goods/services as per PO.
+* **Warehouse/Receiving**: Verifies and accepts delivered items; issues Goods Receipt Note (GRN).
+* **Accounts Payable**: Processes supplier invoices and payments.
+* **Finance Manager**: Oversees budgets and final payment approvals.
+* **Auditor**: (Optional) Reviews procurement and payment records.
+
+---
+
+### **Workflow Steps**
+
+1. **Purchase Requisition (PR) Creation**
+
+   * User fills PR form specifying item, quantity, specification, and justification.
+   * ERP checks if the item is in approved catalog (if enforced).
+   * [ ] Implemented?
+
+2. **PR Review & Approval**
+
+   * Department Manager reviews PR for necessity and budget.
+   * May require multi-level or finance approval for high-value PRs.
+   * [ ] Implemented?
+
+3. **Supplier Sourcing & RFQ**
+
+   * Procurement issues RFQ to minimum 3 approved/registered suppliers.
+   * Suppliers submit quotations via ERP portal or email.
+   * [ ] Implemented?
+
+4. **Quotation Evaluation & Selection**
+
+   * Procurement compares bids (price, delivery, terms, reputation, compliance).
+   * Can involve technical/quality review.
+   * Negotiations done if needed.
+   * [ ] Implemented?
+
+5. **Purchase Order (PO) Creation & Approval**
+
+   * Selected supplier is assigned in ERP.
+   * PO is generated with exact specs, terms, pricing, and delivery.
+   * PO sent for approval as per policy (multi-level for large value).
+   * [ ] Implemented?
+
+6. **PO Issuance to Supplier**
+
+   * Approved PO is emailed or made available in supplier portal.
+   * Supplier confirms acceptance and delivery schedule.
+   * [ ] Implemented?
+
+7. **Order Delivery & Goods Receipt Note (GRN)**
+
+   * Warehouse receives items, checks quality & quantity against PO and supplier delivery note.
+   * Any discrepancies or damages are reported immediately.
+   * GRN is created in ERP.
+   * [ ] Implemented?
+
+8. **Supplier Invoice Submission**
+
+   * Supplier submits invoice referencing PO and GRN.
+   * Invoice uploaded or emailed (preferably via supplier portal).
+   * [ ] Implemented?
+
+9. **Three-Way Match (PO, GRN, Invoice)**
+
+   * Accounts Payable matches invoice, PO, and GRN in ERP.
+   * Discrepancies flagged for investigation and correction.
+   * [ ] Implemented?
+
+10. **Payment Processing**
+
+    * If match is clean, payment request raised for approval.
+    * Payment is processed (cheque/bank transfer) as per agreed terms.
+    * Payment entry posted in ERP and remittance sent to supplier.
+    * [ ] Implemented?
+
+11. **Recordkeeping & Audit Trail**
+
+    * All documents (PR, PO, GRN, invoice, payment) are linked in ERP for full traceability.
+    * Periodic supplier evaluation and compliance checks.
+    * [ ] Implemented?
+
+---
+
+### **Key Controls & Features**
+
+* **Role-based permissions:** Only authorized users can approve PR/PO/payment.
+* **Three-way match:** Ensures no payment without PR/PO, receipt, and invoice all matching.
+* **Automated notifications:** Alerts for pending approvals, delayed deliveries, or mismatches.
+* **Auditability:** Every step is tracked for compliance and review.
+* **Supplier performance review:** Regular feedback loop for blacklist/whitelist.
+
+---
+
+### **Outcome**
+
+After this workflow:
+
+* Every procurement is justified, approved, and logged.
+* Purchases are made at optimal prices/terms from reliable suppliers.
+* All payments are linked to approved POs, GRNs, and invoices.
+* Compliance, cost control, and audit requirements are met.
+
+---
+
+### 📋 **ERP Workflow Implementation Checklist: Procurement Cycle**
+
+| #  | Task                                                      | Status            |
+| -- | --------------------------------------------------------- | ----------------- |
+| 1  | Purchase Requisition (PR) Form (API + UI)                 | \[ ] Implemented? |
+| 2  | PR Multi-level Approval Workflow (API + UI)               | \[ ] Implemented? |
+| 3  | Supplier Master Data Management (API + UI)                | \[ ] Implemented? |
+| 4  | RFQ/Quotation Request and Tracking (API + UI)             | \[ ] Implemented? |
+| 5  | Quotation Comparison & Selection Tool (API + UI)          | \[ ] Implemented? |
+| 6  | PO Creation, Approval & Issuance (API + UI)               | \[ ] Implemented? |
+| 7  | PO Supplier Acknowledgment/Acceptance Tracking (API + UI) | \[ ] Implemented? |
+| 8  | Goods Receipt Note (GRN) Entry & Verification (API + UI)  | \[ ] Implemented? |
+| 9  | Supplier Invoice Upload/Entry (API + UI)                  | \[ ] Implemented? |
+| 10 | Three-Way Match & Discrepancy Handling (API + UI)         | \[ ] Implemented? |
+| 11 | Payment Approval Workflow (API + UI)                      | \[ ] Implemented? |
+| 12 | Payment Processing & Remittance (API + UI)                | \[ ] Implemented? |
+| 13 | Procurement Record Linking & Audit Trail (API + UI)       | \[ ] Implemented? |
+| 14 | Automated Notifications & Exception Alerts                | \[ ] Implemented? |
+| 15 | Supplier Performance/Evaluation Module                    | \[ ] Implemented? |
+| 16 | Role & Permission Enforcement for All Steps               | \[ ] Implemented? |
+| 17 | API Documentation for Procurement Cycle                   | \[ ] Implemented? |
+| 18 | Integration/UI Tests for Procurement Workflow             | \[ ] Implemented? |
+
+---
+
+**How to Use:**
+
+* Check each item (`[ ] Implemented?`) as you complete it.
+* This workflow ensures the procurement cycle is secure, efficient, and auditable.
+
+---
+
+Let me know if you want any customizations (e.g., emergency procurement, framework agreements, punchout catalogs, etc.)!
