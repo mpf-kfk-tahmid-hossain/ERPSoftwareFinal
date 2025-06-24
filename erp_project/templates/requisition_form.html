@@ -7,8 +7,13 @@
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
   <div class="mb-3">
-    <label class="form-label" for="id_number">Number</label>
-    <input type="text" name="number" id="id_number" class="form-control" required>
+    <label class="form-label" for="id_type">Request Type</label>
+    <select name="request_type" id="id_type" class="form-select" required>
+      <option value="Product">Product</option>
+      <option value="Service">Service</option>
+      <option value="Office Supply">Office Supply</option>
+      <option value="Other">Other</option>
+    </select>
   </div>
   <div id="line-items"></div>
   <button type="button" class="btn btn-secondary mb-3" id="add-line" data-bs-toggle="tooltip" title="Add a new line">Add Line</button>

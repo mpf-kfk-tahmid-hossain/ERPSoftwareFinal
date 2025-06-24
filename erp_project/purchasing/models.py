@@ -242,19 +242,50 @@ class PurchaseRequisition(models.Model):
         (REJECTED, 'Rejected'),
     ]
 
+    TYPE_PRODUCT = 'Product'
+    TYPE_SERVICE = 'Service'
+    TYPE_OFFICE = 'Office Supply'
+    TYPE_OTHER = 'Other'
+    TYPE_CHOICES = [
+        (TYPE_PRODUCT, 'Product'),
+        (TYPE_SERVICE, 'Service'),
+        (TYPE_OFFICE, 'Office Supply'),
+        (TYPE_OTHER, 'Other'),
+    ]
+
     number = models.CharField(max_length=50, unique=True)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    request_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     specification = models.CharField(max_length=255, blank=True)
     justification = models.TextField(blank=True)
     items = models.JSONField(default=list, blank=True)
     requester = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    approver = models.ForeignKey('accounts.User', on_delete=models.PROTECT, null=True, blank=True, related_name='approved_reqs')
+    approved_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     created_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.number
+
+    @staticmethod
+    def generate_number(company: Company) -> str:
+        """Generate a sequential PR number for the company."""
+        prefix = f"{company.code}-PR"
+        last = (
+            PurchaseRequisition.objects.filter(company=company, number__startswith=prefix)
+            .order_by("number")
+            .last()
+        )
+        if not last:
+            seq = 1
+        else:
+            num_part = last.number.split("-PR")[-1]
+            seq = int(num_part) + 1
+        width = max(4, len(str(seq)))
+        return f"{prefix}{seq:0{width}d}"
 
 
 class PurchaseRequisitionApproval(models.Model):

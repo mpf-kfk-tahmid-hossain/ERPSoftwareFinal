@@ -12,18 +12,25 @@
   <thead>
     <tr>
       {% include 'includes/sortable_th.html' with label='Number' field='number' %}
-      <th>Product</th>
-      <th>Qty</th>
+      <th>Type</th>
+      <th>Creator</th>
       <th>Status</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for r in page_obj %}
     <tr>
       <td><a href="{% url 'requisition_detail' r.id %}">{{ r.number }}</a></td>
-      <td>{{ r.product.name }}</td>
-      <td>{{ r.quantity }}</td>
+      <td>{{ r.request_type }}</td>
+      <td>{{ r.requester.username }}</td>
       <td>{{ r.get_status_display }}</td>
+      <td>
+        <a class="btn btn-sm btn-secondary" href="{% url 'requisition_detail' r.id %}">View</a>
+        {% if r.status == 'pending' and request.user != r.requester and perms.approve_purchaserequisition %}
+        <a class="btn btn-sm btn-success" href="{% url 'requisition_detail' r.id %}">Approve</a>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>

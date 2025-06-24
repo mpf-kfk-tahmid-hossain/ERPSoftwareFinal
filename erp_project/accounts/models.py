@@ -15,6 +15,7 @@ class Company(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True, blank=True)
     address = models.TextField(blank=True)
+    letterhead = models.FileField(upload_to="letterheads/", null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.code:

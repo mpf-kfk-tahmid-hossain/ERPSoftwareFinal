@@ -445,31 +445,34 @@ class PurchaseRequisitionTests(TestCase):
 
     def test_create_and_approve_requisition(self):
         resp = self.client.post(reverse('requisition_add'), {
-            'number': 'PR1',
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
             'product': self.product.id,
             'quantity': '1',
         })
         self.assertEqual(resp.status_code, 302)
-        pr = PurchaseRequisition.objects.get(number='PR1')
+        pr = PurchaseRequisition.objects.first()
+        self.assertTrue(pr.number.startswith(f"{self.company.code}-PR"))
         self.assertEqual(pr.status, PurchaseRequisition.PENDING)
-        resp = self.client.post(reverse('requisition_approve', args=[pr.id]), {
-            'action': 'approve'
-        })
+        approver = User.objects.create_user(username='approver', password='pass', company=self.company)
+        UserRole.objects.create(user=approver, role=Role.objects.get(name='Admin'), company=self.company)
+        self.client.login(username='approver', password='pass')
+        resp = self.client.post(reverse('requisition_approve', args=[pr.id]), {'action': 'approve'})
         self.assertEqual(resp.status_code, 302)
         pr.refresh_from_db()
         self.assertEqual(pr.status, PurchaseRequisition.APPROVED)
+        self.client.login(username='req', password='pass')
 
     def test_requisition_multiple_lines(self):
         data = [{"type": "Service", "description": "Install", "quantity": "1", "unit": "job"}]
         resp = self.client.post(reverse('requisition_add'), {
-            'number': 'PR2',
+            'request_type': PurchaseRequisition.TYPE_SERVICE,
             'product': self.product.id,
             'quantity': '1',
             'items_json': json.dumps(data),
             'justification': 'Need service'
         })
         self.assertEqual(resp.status_code, 302)
-        pr = PurchaseRequisition.objects.get(number='PR2')
+        pr = PurchaseRequisition.objects.first()
         self.assertEqual(len(pr.items), 1)
 
     def test_requisition_form_get_contains_json(self):
@@ -481,6 +484,48 @@ class PurchaseRequisitionTests(TestCase):
         resp = self.client.get(reverse('requisition_add'))
         self.assertContains(resp, 'Use this form to request')
         self.assertContains(resp, 'summary-text')
+
+    def test_auto_number_increment(self):
+        self.client.post(reverse('requisition_add'), {
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
+            'product': self.product.id,
+            'quantity': '1',
+        })
+        self.client.post(reverse('requisition_add'), {
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
+            'product': self.product.id,
+            'quantity': '1',
+        })
+        nums = list(PurchaseRequisition.objects.values_list('number', flat=True).order_by('id'))
+        self.assertEqual(nums[0][-4:], '0001')
+        self.assertEqual(nums[1][-4:], '0002')
+
+    def test_creator_cannot_approve(self):
+        self.client.post(reverse('requisition_add'), {
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
+            'product': self.product.id,
+            'quantity': '1',
+        })
+        pr = PurchaseRequisition.objects.first()
+        resp = self.client.post(reverse('requisition_approve', args=[pr.id]), {'action': 'approve'})
+        pr.refresh_from_db()
+        self.assertEqual(pr.status, PurchaseRequisition.PENDING)
+
+    def test_pdf_requires_permission(self):
+        self.client.post(reverse('requisition_add'), {
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
+            'product': self.product.id,
+            'quantity': '1',
+        })
+        pr = PurchaseRequisition.objects.first()
+        approver = User.objects.create_user(username='approver2', password='pass', company=self.company)
+        UserRole.objects.create(user=approver, role=Role.objects.get(name='Admin'), company=self.company)
+        self.client.login(username='approver2', password='pass')
+        self.client.post(reverse('requisition_approve', args=[pr.id]), {'action': 'approve'})
+        self.client.login(username='req', password='pass')
+        resp = self.client.get(reverse('requisition_pdf', args=[pr.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'application/pdf')
 
 
 class ProcurementExtrasTests(TestCase):
@@ -575,13 +620,20 @@ class ProcurementCycleIntegrationTests(TestCase):
     def test_full_procurement_flow(self):
         # 1. Create requisition
         self.client.post(reverse('requisition_add'), {
-            'number': 'PR1', 'product': self.product.id, 'quantity': '1'
+            'request_type': PurchaseRequisition.TYPE_PRODUCT,
+            'product': self.product.id,
+            'quantity': '1'
         })
-        pr = PurchaseRequisition.objects.get(number='PR1')
+        pr = PurchaseRequisition.objects.first()
+        self.assertTrue(pr.number.endswith('0001'))
         self.assertEqual(pr.status, PurchaseRequisition.PENDING)
 
-        # 2. Approve requisition
+        # 2. Approve requisition by different user
+        approver = User.objects.create_user(username='approver3', password='pass', company=self.company)
+        UserRole.objects.create(user=approver, role=Role.objects.get(name='Admin'), company=self.company)
+        self.client.login(username='approver3', password='pass')
         self.client.post(reverse('requisition_approve', args=[pr.id]), {'action': 'approve'})
+        self.client.login(username='proc', password='pass')
         pr.refresh_from_db()
         self.assertEqual(pr.status, PurchaseRequisition.APPROVED)
 

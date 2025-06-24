@@ -280,84 +280,84 @@
 
 #### **1. Form Type & Structure**
 
-* [ ] **Single Type per Requisition:**
+* [x] **Single Type per Requisition:**
   User must choose one Type per PR (Product, Service, Office Supply, Other).
 
-  * [ ] UI disables adding lines of multiple types within a single PR.
-  * [ ] On save, validation enforces only one type.
+  * [x] UI disables adding lines of multiple types within a single PR.
+  * [x] On save, validation enforces only one type.
 
-* [ ] **Line Item Structure:**
+* [x] **Line Item Structure:**
   Each line includes: Name, Description, Qty, Unit.
 
-  * [ ] For **Type = Product**: Name, Description, Unit auto-fill from existing Products in DB.
-  * [ ] For **Other Types**: Name, Description, and Unit are free text/select.
-  * [ ] Each line includes **Justification** field.
+  * [x] For **Type = Product**: Name, Description, Unit auto-fill from existing Products in DB.
+  * [x] For **Other Types**: Name, Description, and Unit are free text/select.
+  * [x] Each line includes **Justification** field.
 
 #### **2. Unique Form Number Generation**
 
-* [ ] **PR Number Format:**
+* [x] **PR Number Format:**
   `[CompCode]-[PR0001]` (auto-increment, zero-padded; expands to 5/6/7 digits as needed).
 
-  * [ ] Form number is unique across the company.
-  * [ ] Test auto-increment on PR creation (check for \[CompCode]-PR0001, PR0002, … PR01000, PR10000, etc).
+  * [x] Form number is unique across the company.
+  * [x] Test auto-increment on PR creation (check for \[CompCode]-PR0001, PR0002, … PR01000, PR10000, etc).
 
 #### **3. Editing & Permissions**
 
-* [ ] **Edit Restrictions:**
+* [x] **Edit Restrictions:**
 
-  * [ ] Only the creator of the PR can edit the form.
-  * [ ] Once PR is **Approved** or **Rejected**, editing is locked (even for creator).
-  * [ ] Users can view, but not change, approved/rejected PRs.
+  * [x] Only the creator of the PR can edit the form.
+  * [x] Once PR is **Approved** or **Rejected**, editing is locked (even for creator).
+  * [x] Users can view, but not change, approved/rejected PRs.
 
 #### **4. List, View, and Workflow**
 
-* [ ] **List View:**
+* [x] **List View:**
 
-  * [ ] Shows all PRs, with filters by Type, Status (Draft, Pending, Approved, Rejected), Creator.
-  * [ ] Each row has View and (if allowed) Edit/Approve/Reject actions.
+  * [x] Shows all PRs, with filters by Type, Status (Draft, Pending, Approved, Rejected), Creator.
+  * [x] Each row has View and (if allowed) Edit/Approve/Reject actions.
 
-* [ ] **Detail View:**
+* [x] **Detail View:**
 
-  * [ ] Full PR detail page (all lines, justification, creator, status, actions).
+  * [x] Full PR detail page (all lines, justification, creator, status, actions).
 
 #### **5. Approval/Rejection Workflow**
 
-* [ ] **Approval Logic:**
+* [x] **Approval Logic:**
 
-  * [ ] Only users with permission can approve/reject.
-  * [ ] Creator **cannot approve/reject** their own PR (enforce even if they have permission).
-  * [ ] PR must record both Creator and Approver usernames/IDs.
-  * [ ] Cannot approve/reject if already finalized.
-  * [ ] Approval sets status to Approved, rejection sets status to Rejected, both lock editing.
+  * [x] Only users with permission can approve/reject.
+  * [x] Creator **cannot approve/reject** their own PR (enforce even if they have permission).
+  * [x] PR must record both Creator and Approver usernames/IDs.
+  * [x] Cannot approve/reject if already finalized.
+  * [x] Approval sets status to Approved, rejection sets status to Rejected, both lock editing.
 
 #### **6. PDF Print & Company Letterhead**
 
-* [ ] **PDF Export:**
+* [x] **PDF Export:**
 
-  * [ ] PR can be exported/printed as PDF, formatted on company letterhead.
-  * [ ] PDF includes all details: company info, PR number, creator, approver, all lines, justifications, status, and date.
-  * [ ] PR PDF cannot be generated for drafts or incomplete forms (only for finalized PRs).
+  * [x] PR can be exported/printed as PDF, formatted on company letterhead.
+  * [x] PDF includes all details: company info, PR number, creator, approver, all lines, justifications, status, and date.
+  * [x] PR PDF cannot be generated for drafts or incomplete forms (only for finalized PRs).
 
-* [ ] **Company Settings:**
+* [x] **Company Settings:**
 
-  * [ ] System supports uploading company letterhead (image/PDF) in company settings/admin.
-  * [ ] PDF print uses the uploaded letterhead for all PRs.
+  * [x] System supports uploading company letterhead (image/PDF) in company settings/admin.
+  * [x] PDF print uses the uploaded letterhead for all PRs.
 
 #### **7. Permission Tests**
 
-* [ ] Test: Creator can edit draft PR, but not once submitted/approved/rejected.
-* [ ] Test: Approver cannot be the same user as the creator (must block via UI & backend).
-* [ ] Test: Only permitted users can see Approve/Reject buttons.
-* [ ] Test: PDF is only accessible to users with view permission.
+* [x] Test: Creator can edit draft PR, but not once submitted/approved/rejected.
+* [x] Test: Approver cannot be the same user as the creator (must block via UI & backend).
+* [x] Test: Only permitted users can see Approve/Reject buttons.
+* [x] Test: PDF is only accessible to users with view permission.
 
 #### **8. Usability & Edge Cases**
 
-* [ ] Test PR numbers increment without collision under concurrent requests.
-* [ ] Test with 9999+ PRs for proper number expansion.
-* [ ] Test adding, editing, and viewing for each Type (Product, Service, Office Supply, Other).
-* [ ] Test error if attempting to add lines of multiple types.
-* [ ] Test locked state after approval/rejection (no edits allowed).
-* [ ] Test PDF print includes letterhead and all required info.
+* [x] Test PR numbers increment without collision under concurrent requests.
+* [x] Test with 9999+ PRs for proper number expansion.
+* [x] Test adding, editing, and viewing for each Type (Product, Service, Office Supply, Other).
+* [x] Test error if attempting to add lines of multiple types.
+* [x] Test locked state after approval/rejection (no edits allowed).
+* [x] Test PDF print includes letterhead and all required info.
 
 ---
 

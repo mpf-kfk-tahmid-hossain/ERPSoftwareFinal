@@ -37,7 +37,7 @@ from .utils import (
     validate_swift,
 )
 from inventory.models import Product, Warehouse, ProductSerial
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 
 
 class SupplierListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
@@ -536,7 +536,7 @@ class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, Templat
     template_name = 'requisition_list.html'
     model = PurchaseRequisition
     search_fields = ['number', 'product__name', 'requester__username']
-    filter_fields = ['status']
+    filter_fields = ['status', 'request_type', 'requester__username']
     default_sort = '-created_at'
 
     def base_queryset(self):
@@ -558,7 +558,25 @@ class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, Templat
                     {'val': PurchaseRequisition.REJECTED, 'label': 'Rejected'},
                 ],
                 'current': self.request.GET.get('status', ''),
-            }
+            },
+            {
+                'name': 'request_type',
+                'label': 'Type',
+                'options': [
+                    {'val': '', 'label': 'All'},
+                    {'val': PurchaseRequisition.TYPE_PRODUCT, 'label': 'Product'},
+                    {'val': PurchaseRequisition.TYPE_SERVICE, 'label': 'Service'},
+                    {'val': PurchaseRequisition.TYPE_OFFICE, 'label': 'Office Supply'},
+                    {'val': PurchaseRequisition.TYPE_OTHER, 'label': 'Other'},
+                ],
+                'current': self.request.GET.get('request_type', ''),
+            },
+            {
+                'name': 'requester__username',
+                'label': 'Creator',
+                'options': [],
+                'current': self.request.GET.get('requester__username', ''),
+            },
         ]
         context['sort_options'] = [
             ('created_at', 'Date'),
@@ -574,13 +592,13 @@ class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, Templat
 class PurchaseRequisitionCreateView(LoginRequiredMixin, View):
     def get(self, request):
         products = list(
-            Product.objects.filter(company=request.user.company).values('id', 'name')
+            Product.objects.filter(company=request.user.company).values('id', 'name', 'description', 'unit__name')
         )
         return render(request, 'requisition_form.html', {'products': products})
 
     def post(self, request):
-        number = request.POST.get('number', '').strip()
         just = request.POST.get('justification', '').strip()
+        req_type = request.POST.get('request_type')
         items_raw = request.POST.get('items_json', '')
         items = []
         if items_raw:
@@ -593,17 +611,23 @@ class PurchaseRequisitionCreateView(LoginRequiredMixin, View):
         product_id = request.POST.get('product')
         qty = request.POST.get('quantity', '').strip()
         spec = request.POST.get('specification', '').strip()
-        if not items and (not number or not product_id or not qty):
+        if not items and (not product_id or not qty):
             products = Product.objects.filter(company=request.user.company)
             return render(request, 'requisition_form.html', {'products': products, 'error': 'All fields required'})
-        if PurchaseRequisition.objects.filter(number=number, company=request.user.company).exists():
-            products = Product.objects.filter(company=request.user.company)
-            return render(request, 'requisition_form.html', {'products': products, 'error': 'Number exists'})
         product = None
         if product_id:
             product = get_object_or_404(Product, pk=product_id, company=request.user.company)
+        # validate single type
+        if any(item.get('type') and item['type'] != req_type for item in items):
+            products = Product.objects.filter(company=request.user.company)
+            return render(request, 'requisition_form.html', {
+                'products': products,
+                'error': 'All line items must match the request type',
+            })
+        number = PurchaseRequisition.generate_number(request.user.company)
         pr = PurchaseRequisition.objects.create(
             number=number,
+            request_type=req_type,
             product=product,
             quantity=qty or 0,
             specification=spec,
@@ -634,10 +658,15 @@ class PurchaseRequisitionApproveView(LoginRequiredMixin, View):
         pr = get_object_or_404(PurchaseRequisition, pk=pk, company=request.user.company)
         if pr.status != PurchaseRequisition.PENDING:
             return redirect('requisition_detail', pk=pk)
+        if pr.requester_id == request.user.id:
+            messages.error(request, 'Creator cannot approve their own requisition')
+            return redirect('requisition_detail', pk=pk)
         action = request.POST.get('action')
         comment = request.POST.get('comment', '').strip()
         approved = action == 'approve'
         pr.status = PurchaseRequisition.APPROVED if approved else PurchaseRequisition.REJECTED
+        pr.approver = request.user
+        pr.approved_at = timezone.now()
         pr.save()
         PurchaseRequisitionApproval.objects.create(
             requisition=pr,
@@ -648,6 +677,51 @@ class PurchaseRequisitionApproveView(LoginRequiredMixin, View):
         )
         log_action(request.user, 'approve_pr', details={'id': pr.id, 'approved': approved}, company=request.user.company)
         return redirect('requisition_detail', pk=pk)
+
+
+@method_decorator(require_permission('view_purchaserequisition'), name='dispatch')
+class PurchaseRequisitionPDFView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        pr = get_object_or_404(PurchaseRequisition, pk=pk, company=request.user.company)
+        if pr.status not in [PurchaseRequisition.APPROVED, PurchaseRequisition.REJECTED]:
+            return HttpResponseForbidden()
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{pr.number}.pdf"'
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+
+        p = canvas.Canvas(response, pagesize=A4)
+        y = 800
+        company = request.user.company
+        if company.letterhead:
+            try:
+                from django.core.files.storage import default_storage
+                with default_storage.open(company.letterhead.name, 'rb') as img:
+                    p.drawImage(img, 40, y, width=200, preserveAspectRatio=True, mask='auto')
+                y -= 60
+            except Exception:
+                pass
+        p.setFont('Helvetica-Bold', 14)
+        p.drawString(40, y, f'Purchase Requisition {pr.number}')
+        y -= 30
+        p.setFont('Helvetica', 12)
+        p.drawString(40, y, f'Status: {pr.get_status_display()}')
+        y -= 20
+        p.drawString(40, y, f'Requester: {pr.requester.username}')
+        y -= 20
+        if pr.approver:
+            p.drawString(40, y, f'Approver: {pr.approver.username}')
+            y -= 20
+        p.drawString(40, y, 'Items:')
+        y -= 20
+        for item in pr.items:
+            line = f"{item.get('name','')} - {item.get('description','')} ({item.get('quantity')} {item.get('unit')})"
+            p.drawString(60, y, line)
+            y -= 15
+        p.drawString(40, y - 10, f"Justification: {pr.justification}")
+        p.showPage()
+        p.save()
+        return response
 
 
 class QuotationComparisonView(LoginRequiredMixin, TemplateView):

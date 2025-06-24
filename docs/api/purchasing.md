@@ -66,7 +66,7 @@
   - **URL:** `/purchasing/requisitions/add/`
   - **Method:** `POST`
   - **Auth:** `add_purchaserequisition`
-  - **Payload:** `number`, `product`, `quantity`, `specification`, `justification`
+  - **Payload:** `request_type`, `product`, `quantity`, `items_json`, `justification`
   - **Response:** Redirect to requisition detail
 - **Approve/Rejection**
   - **URL:** `/purchasing/requisitions/<id>/approve/`
@@ -74,6 +74,11 @@
   - **Auth:** `approve_purchaserequisition`
   - **Payload:** `action` (`approve` or `reject`), `comment`
   - **Response:** Redirect to requisition detail
+- **PDF Export**
+  - **URL:** `/purchasing/requisitions/<id>/pdf/`
+  - **Method:** `GET`
+  - **Auth:** `view_purchaserequisition`
+  - **Response:** PDF document of the requisition
 
 ## Quotation Comparison & Selection
 - **URL:** `/purchasing/quotations/compare/?product=<id>`
