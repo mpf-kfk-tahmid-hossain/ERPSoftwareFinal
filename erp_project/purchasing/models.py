@@ -318,3 +318,66 @@ class SupplierEvaluation(models.Model):
 
     def __str__(self):
         return f"{self.supplier} {self.score}"
+
+
+class ServiceItem(models.Model):
+    """Service master record for requisitions."""
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return self.name
+
+class OfficeSupplyItem(models.Model):
+    """Office supply master record for requisitions."""
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return self.name
+
+
+class AssetItem(models.Model):
+    """Asset or capital expenditure item master."""
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return self.name
+
+
+class ITSoftwareItem(models.Model):
+    """IT or software master item."""
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unit = models.ForeignKey('inventory.ProductUnit', on_delete=models.PROTECT)
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return self.name

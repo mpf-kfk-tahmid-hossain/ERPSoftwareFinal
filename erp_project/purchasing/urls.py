@@ -29,4 +29,28 @@ urlpatterns = [
     path('requisitions/<int:pk>/pdf/', views.PurchaseRequisitionPDFView.as_view(), name='requisition_pdf'),
     path('suppliers/<int:supplier_id>/evaluate/', views.SupplierEvaluationCreateView.as_view(), name='supplier_evaluate'),
     path('banks/search/', views.BankSearchView.as_view(), name='bank_search'),
+    path('services/search/', views.ServiceItemSearchView.as_view(), name='service_search'),
+    path('office-supplies/search/', views.OfficeSupplyItemSearchView.as_view(), name='office_supply_search'),
+    path('assets/search/', views.AssetItemSearchView.as_view(), name='asset_item_search'),
+    path('it-software/search/', views.ITSoftwareItemSearchView.as_view(), name='it_item_search'),
+
+    path('services/', views.ServiceItemListView.as_view(), name='service_list'),
+    path('services/add/', views.ServiceItemCreateView.as_view(), name='service_add'),
+    path('services/<int:pk>/edit/', views.ServiceItemUpdateView.as_view(), name='service_edit'),
+    path('services/<int:pk>/delete/', views.ServiceItemDeleteView.as_view(), name='service_delete'),
+
+    path('office-supplies/', views.OfficeSupplyItemListView.as_view(), name='office_supply_list'),
+    path('office-supplies/add/', views.OfficeSupplyItemCreateView.as_view(), name='office_supply_add'),
+    path('office-supplies/<int:pk>/edit/', views.OfficeSupplyItemUpdateView.as_view(), name='office_supply_edit'),
+    path('office-supplies/<int:pk>/delete/', views.OfficeSupplyItemDeleteView.as_view(), name='office_supply_delete'),
+
+    path('assets/', views.AssetItemListView.as_view(), name='asset_item_list'),
+    path('assets/add/', views.AssetItemCreateView.as_view(), name='asset_item_add'),
+    path('assets/<int:pk>/edit/', views.AssetItemUpdateView.as_view(), name='asset_item_edit'),
+    path('assets/<int:pk>/delete/', views.AssetItemDeleteView.as_view(), name='asset_item_delete'),
+
+    path('it-software/', views.ITSoftwareItemListView.as_view(), name='it_item_list'),
+    path('it-software/add/', views.ITSoftwareItemCreateView.as_view(), name='it_item_add'),
+    path('it-software/<int:pk>/edit/', views.ITSoftwareItemUpdateView.as_view(), name='it_item_edit'),
+    path('it-software/<int:pk>/delete/', views.ITSoftwareItemDeleteView.as_view(), name='it_item_delete'),
 ]

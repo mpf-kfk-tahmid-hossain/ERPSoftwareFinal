@@ -19,6 +19,10 @@ from .models import (
     QuotationRequest,
     QuotationRequestLine,
     PurchaseRequisition,
+    ServiceItem,
+    OfficeSupplyItem,
+    AssetItem,
+    ITSoftwareItem,
 )
 
 User = get_user_model()
@@ -423,6 +427,21 @@ class SupplierEnhancementTests(TestCase):
         resp = self.client.get(reverse('supplier_edit', args=[supplier.id]))
         self.assertContains(resp, 'select2')
 
+    def test_master_item_search_endpoints(self):
+        ServiceItem.objects.create(name='Clean', unit=ProductUnit.objects.create(code='JOB', name='Job'), company=self.company)
+        OfficeSupplyItem.objects.create(name='Paper', unit=ProductUnit.objects.create(code='EA', name='Each'), company=self.company)
+        AssetItem.objects.create(name='Printer', unit=ProductUnit.objects.create(code='EA2', name='Each'), company=self.company)
+        ITSoftwareItem.objects.create(name='Antivirus', unit=ProductUnit.objects.create(code='LIC', name='License'), company=self.company)
+        resp = self.client.get(reverse('service_search'), {'q': 'Clean'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('Clean', resp.json()['results'][0]['text'])
+        resp = self.client.get(reverse('office_supply_search'), {'q': 'Paper'})
+        self.assertIn('Paper', resp.json()['results'][0]['text'])
+        resp = self.client.get(reverse('asset_item_search'), {'q': 'Print'})
+        self.assertIn('Printer', resp.json()['results'][0]['text'])
+        resp = self.client.get(reverse('it_item_search'), {'q': 'Anti'})
+        self.assertIn('Antivirus', resp.json()['results'][0]['text'])
+
 
 
 class PurchaseRequisitionTests(TestCase):
@@ -689,3 +708,118 @@ class ProcurementCycleIntegrationTests(TestCase):
         # 11. Ledger entries created
         entries = LedgerEntry.objects.filter(company=self.company)
         self.assertGreaterEqual(entries.count(), 3)
+
+
+class ServiceItemTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='SvcCo', code='SV')
+        self.user = User.objects.create_user(username='svc', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = ['add_serviceitem', 'view_serviceitem', 'change_serviceitem', 'delete_serviceitem', 'add_productunit']
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='svc', password='pass')
+        self.unit = ProductUnit.objects.create(code='JOB', name='Job')
+
+    def test_create_list_edit_delete_service(self):
+        resp = self.client.post(reverse('service_add'), {'name': 'Install', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item = ServiceItem.objects.get(name='Install')
+        resp = self.client.get(reverse('service_list'))
+        self.assertContains(resp, 'Install')
+        resp = self.client.post(reverse('service_edit', args=[item.id]), {'name': 'Fix', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.name, 'Fix')
+        resp = self.client.post(reverse('service_delete', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+
+class OfficeSupplyItemTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='OfficeCo', code='OF')
+        self.user = User.objects.create_user(username='ofc', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = ['add_officesupplyitem', 'view_officesupplyitem', 'change_officesupplyitem', 'delete_officesupplyitem', 'add_productunit']
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='ofc', password='pass')
+        self.unit = ProductUnit.objects.create(code='EA', name='Each')
+
+    def test_create_list_edit_delete_office_supply(self):
+        resp = self.client.post(reverse('office_supply_add'), {'name': 'Pen', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item = OfficeSupplyItem.objects.get(name='Pen')
+        resp = self.client.get(reverse('office_supply_list'))
+        self.assertContains(resp, 'Pen')
+        resp = self.client.post(reverse('office_supply_edit', args=[item.id]), {'name': 'Pencil', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.name, 'Pencil')
+        resp = self.client.post(reverse('office_supply_delete', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+
+
+class AssetItemTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='AssetCo', code='AC')
+        self.user = User.objects.create_user(username='ast', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = ['add_assetitem', 'view_assetitem', 'change_assetitem', 'delete_assetitem', 'add_productunit']
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='ast', password='pass')
+        self.unit = ProductUnit.objects.create(code='EA', name='Each')
+
+    def test_create_list_edit_delete_asset_item(self):
+        resp = self.client.post(reverse('asset_item_add'), {'name': 'Desk', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item = AssetItem.objects.get(name='Desk')
+        resp = self.client.get(reverse('asset_item_list'))
+        self.assertContains(resp, 'Desk')
+        resp = self.client.post(reverse('asset_item_edit', args=[item.id]), {'name': 'Chair', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.name, 'Chair')
+        resp = self.client.post(reverse('asset_item_delete', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+
+
+class ITSoftwareItemTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name='ITCo', code='IT')
+        self.user = User.objects.create_user(username='it', password='pass', company=self.company)
+        role = Role.objects.get(name='Admin')
+        perms = ['add_itsoftwareitem', 'view_itsoftwareitem', 'change_itsoftwareitem', 'delete_itsoftwareitem', 'add_productunit']
+        for codename in perms:
+            perm, _ = Permission.objects.get_or_create(codename=codename)
+            role.permissions.add(perm)
+        UserRole.objects.create(user=self.user, role=role, company=self.company)
+        self.client.login(username='it', password='pass')
+        self.unit = ProductUnit.objects.create(code='LIC', name='License')
+
+    def test_create_list_edit_delete_it_item(self):
+        resp = self.client.post(reverse('it_item_add'), {'name': 'Software', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item = ITSoftwareItem.objects.get(name='Software')
+        resp = self.client.get(reverse('it_item_list'))
+        self.assertContains(resp, 'Software')
+        resp = self.client.post(reverse('it_item_edit', args=[item.id]), {'name': 'App', 'unit': self.unit.id})
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.name, 'App')
+        resp = self.client.post(reverse('it_item_delete', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)

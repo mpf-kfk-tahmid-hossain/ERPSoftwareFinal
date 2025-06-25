@@ -10,6 +10,7 @@ from .views import (
     StockMovementListView, StockMovementCreateView,
     InventoryAdjustmentListView, InventoryAdjustmentCreateView,
     stock_on_hand,
+    ProductSearchView,
 )
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     path('categories/children/', category_children, name='category_children'),
     path('categories/quick-add/', category_quick_add, name='category_quick_add'),
     path('units/quick-add/', unit_quick_add, name='unit_quick_add'),
+    path('products/search/', ProductSearchView.as_view(), name='product_search'),
     path('products/', ProductListView.as_view(), name='product_list'),
     path('products/add/', ProductCreateView.as_view(), name='product_add'),
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product_detail'),

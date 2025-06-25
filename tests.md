@@ -373,51 +373,51 @@
 
 * [ ] Implement individual master tables for:
 
-  * [ ] Products/Materials
-  * [ ] Services
-  * [ ] Office Supplies
-  * [ ] Asset/Capex
-  * [ ] IT/Software
+  * [x] Products/Materials
+  * [x] Services
+  * [x] Office Supplies
+  * [x] Asset/Capex
+  * [x] IT/Software
 
 #### **2. CRUD for Master Data**
 
-* [ ] Each master type (Products, Services, Office Supplies, Asset/Capex, IT/Software) must have:
+* [x] Each master type (Products, Services, Office Supplies, Asset/Capex, IT/Software) must have:
 
-  * [ ] List View (with search, filter, pagination)
-  * [ ] Create View (form for new entry)
-  * [ ] Edit View (update existing entry)
-  * [ ] Delete/Deactivate View (soft delete or status flag preferred)
-  * [ ] Permission checks: Only authorized users can create/edit/delete
+  * [x] List View (with search, filter, pagination)
+  * [x] Create View (form for new entry)
+  * [x] Edit View (update existing entry)
+  * [x] Delete/Deactivate View (soft delete or status flag preferred)
+  * [x] Permission checks: Only authorized users can create/edit/delete
 
 #### **3. Purchase Requisition Line Item Entry**
 
-* [ ] In the Purchase Requisition Form:
+* [x] In the Purchase Requisition Form:
 
-  * [ ] Each line item “Type” (Product/Service/Office Supply/Asset/IT) triggers a **searchable dropdown/autocomplete** for that type.
-  * [ ] User can search and select from the relevant master data list.
-  * [ ] Auto-fill fields (name, description, unit) if selected from master data.
-  * [ ] Option to create new master record inline (with permission).
+  * [x] Each line item “Type” (Product/Service/Office Supply/Asset/IT) triggers a **searchable dropdown/autocomplete** for that type.
+  * [x] User can search and select from the relevant master data list.
+  * [x] Auto-fill fields (name, description, unit) if selected from master data.
+  * [x] Option to create new master record inline (with permission).
 
 #### **4. Usability & Validation**
 
-* [ ] Fast search and selection for large lists (AJAX/autocomplete).
-* [ ] Proper validation: Only valid/active master data can be added.
-* [ ] Show error if user tries to add a non-existent or inactive item.
-* [ ] User-friendly feedback when creating or selecting items.
+* [x] Fast search and selection for large lists (AJAX/autocomplete).
+* [x] Proper validation: Only valid/active master data can be added.
+* [x] Show error if user tries to add a non-existent or inactive item.
+* [x] User-friendly feedback when creating or selecting items.
 
 #### **5. Admin/Settings**
 
-* [ ] Admins can manage each master data type from the admin/settings menu.
+* [x] Admins can manage each master data type from the admin/settings menu.
 * [ ] Bulk import/export for each list (CSV/XLSX).
 
 #### **6. Test Coverage**
 
-* [ ] Automated tests for:
+* [x] Automated tests for:
 
-  * [ ] CRUD on all master lists
-  * [ ] Requisition form correctly searches/selects from master data
-  * [ ] Edge cases (duplicate, inactive, missing items)
-  * [ ] Permissions for create/edit/delete
+  * [x] CRUD on all master lists
+  * [x] Requisition form correctly searches/selects from master data
+  * [x] Edge cases (duplicate, inactive, missing items)
+  * [x] Permissions for create/edit/delete
 
 ---
 

@@ -1,97 +1,118 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <!-- Bootstrap 5 -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Select2 core -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<!-- Select2 Bootstrap 5 theme -->
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Select2 core -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <!-- Select2 Bootstrap 5 theme -->
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Select2 -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <title>{% block title %}ERP{% endblock %}</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'dashboard' %}">ERP</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav me-auto">
-        {% if user.is_authenticated and user.is_superuser %}
+<div class="d-flex">
+  <nav id="sidebar" class="bg-light border-end" style="min-width:220px;min-height:100vh;">
+    <div class="p-3">
+      <a class="navbar-brand" href="{% url 'dashboard' %}">ERP</a>
+      <hr>
+      {% if user.is_authenticated %}
+      <ul class="nav flex-column mb-2">
+        {% if user.is_superuser %}
         <li class="nav-item"><a class="nav-link" href="{% url 'company_list' %}">Companies</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'company_add' %}">Add Company</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_user %}
+      </ul>
+      <h6 class="text-muted">Administration</h6>
+      <ul class="nav flex-column mb-2">
+        {% if user.company and nav_perms.view_user %}
         <li class="nav-item"><a class="nav-link" href="{% url 'user_list' user.company.id %}">Users</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_role %}
+        {% if user.company and nav_perms.view_role %}
         <li class="nav-item"><a class="nav-link" href="{% url 'role_list' %}">Roles</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_warehouse %}
+        {% if user.company and nav_perms.view_warehouse %}
         <li class="nav-item"><a class="nav-link" href="{% url 'warehouse_list' %}">Warehouses</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_productcategory %}
+        {% if user.company and nav_perms.view_productcategory %}
         <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">Categories</a></li>
         {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_product %}
+      </ul>
+      <h6 class="text-muted">Inventory</h6>
+      <ul class="nav flex-column mb-2">
+        {% if user.company and nav_perms.view_product %}
         <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}">Products</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_supplier %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'supplier_list' %}">Suppliers</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_purchaserequisition %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_list' %}">Requisitions</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.add_purchaserequisition %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_add' %}">New Requisition</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.add_quotationrequest %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'quotation_add' %}">New Quotation</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.add_purchaseorder %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'purchase_order_add' %}">New PO</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_supplierinvoice %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_payment %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}">Payments</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_stocklot %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock_lot_list' %}">Stock Lots</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_stockmovement %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock_movement_list' %}">Stock Movements</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_inventoryadjustment %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'inventory_adjustment_list' %}">Adjustments</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_stock_on_hand %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'stock_on_hand' %}">Stock On Hand</a></li>
-        {% endif %}
-        {% if user.is_authenticated and user.company and nav_perms.view_product %}
         <li class="nav-item"><a class="nav-link" href="{% url 'pos_scan' %}">POS Scan</a></li>
         {% endif %}
-        {% if user.is_authenticated and nav_perms.view_auditlog %}
+        {% if user.company and nav_perms.view_stocklot %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_lot_list' %}">Stock Lots</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_stockmovement %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_movement_list' %}">Stock Movements</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_inventoryadjustment %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'inventory_adjustment_list' %}">Adjustments</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_stock_on_hand %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'stock_on_hand' %}">Stock On Hand</a></li>
+        {% endif %}
+      </ul>
+      <h6 class="text-muted">Purchasing</h6>
+      <ul class="nav flex-column mb-2">
+        {% if user.company and nav_perms.view_serviceitem %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'service_list' %}">Services</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_officesupplyitem %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'office_supply_list' %}">Office Supplies</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_assetitem %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'asset_item_list' %}">Assets/Capex</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_itsoftwareitem %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'it_item_list' %}">IT/Software</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_supplier %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'supplier_list' %}">Suppliers</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_purchaserequisition %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_list' %}">Requisitions</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.add_purchaserequisition %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'requisition_add' %}">New Requisition</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.add_quotationrequest %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'quotation_add' %}">New Quotation</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.add_purchaseorder %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'purchase_order_add' %}">New PO</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_supplierinvoice %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a></li>
+        {% endif %}
+        {% if user.company and nav_perms.view_payment %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}">Payments</a></li>
+        {% endif %}
+      </ul>
+      <h6 class="text-muted">Audit</h6>
+      <ul class="nav flex-column mb-2">
+        {% if nav_perms.view_auditlog %}
         <li class="nav-item"><a class="nav-link" href="{% url 'audit_log_list' %}">Audit Logs</a></li>
         {% endif %}
-      </ul>
-      <ul class="navbar-nav ms-auto">
-        {% if user.is_authenticated %}
         <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
-        {% else %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-        {% endif %}
       </ul>
+      {% else %}
+      <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+      </ul>
+      {% endif %}
     </div>
-  </div>
-</nav>
-  <div class="container">
+  </nav>
+  <div class="flex-grow-1 p-3">
     {% if messages %}
       {% for message in messages %}
         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -99,9 +120,8 @@
     {% endif %}
     {% block content %}{% endblock %}
   </div>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  {% block extra_js %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Office Supplies{% endblock %}
+{% block content %}
+<h2>Office Supplies</h2>
+{% if can_add_office %}
+<a href="{% url 'office_supply_add' %}" class="btn btn-success mb-2">Add Office Supply</a>
+{% endif %}
+{% include 'includes/filter_form.html' %}
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      <th>Description</th>
+      <th>Unit</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in page_obj %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.description }}</td>
+      <td>{{ s.unit.name }}</td>
+      <td>
+        <a href="{% url 'office_supply_edit' s.id %}" class="btn btn-sm btn-secondary">Edit</a>
+        <form method="post" action="{% url 'office_supply_delete' s.id %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+{% endblock %}

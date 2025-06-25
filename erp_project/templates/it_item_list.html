@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}IT/Software Items{% endblock %}
+{% block content %}
+<h2>IT/Software Items</h2>
+{% if can_add_it %}
+<a href="{% url 'it_item_add' %}" class="btn btn-success mb-2">Add IT Item</a>
+{% endif %}
+{% include 'includes/filter_form.html' %}
+<table class="table">
+  <thead>
+    <tr>
+      {% include 'includes/sortable_th.html' with label='Name' field='name' %}
+      <th>Description</th>
+      <th>Unit</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in page_obj %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.description }}</td>
+      <td>{{ s.unit.name }}</td>
+      <td>
+        <a href="{% url 'it_item_edit' s.id %}" class="btn btn-sm btn-secondary">Edit</a>
+        <form method="post" action="{% url 'it_item_delete' s.id %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include 'includes/pagination.html' %}
+{% endblock %}
