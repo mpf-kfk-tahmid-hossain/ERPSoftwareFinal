@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 
 from django.views.generic import TemplateView, View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from django.db.models import Sum, F, Q, DecimalField, ExpressionWrapper, Value
 from django.db.models.functions import Coalesce
@@ -369,6 +370,16 @@ def unit_quick_add(request):
     unit = ProductUnit.objects.create(code=code, name=name)
     log_action(request.user, 'create_unit', details={'code': code})
     return render(request, 'includes/unit_option.html', {'unit': unit}, status=201)
+
+
+class ProductSearchView(LoginRequiredMixin, View):
+    """Return products matching query for Select2 search."""
+
+    def get(self, request):
+        q = request.GET.get('q', '')
+        products = Product.objects.filter(company=request.user.company, name__icontains=q)[:10]
+        data = [{'id': p.id, 'text': p.name, 'description': p.description, 'unit': p.unit.name} for p in products]
+        return JsonResponse({'results': data})
 
 
 

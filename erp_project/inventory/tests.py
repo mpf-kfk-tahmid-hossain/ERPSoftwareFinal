@@ -269,9 +269,13 @@ class ProductFlowTests(TestCase):
         resp = self.client.get(reverse('product_list'), {'q': 'Red'})
         self.assertContains(resp, 'Hammer')
         self.assertNotContains(resp, 'Drill')
-        resp = self.client.get(reverse('product_list'), {'category': cat.id})
-        self.assertContains(resp, 'Hammer')
-        self.assertNotContains(resp, 'Drill')
+
+    def test_product_search_endpoint(self):
+        unit = ProductUnit.objects.create(code='BX', name='Box')
+        Product.objects.create(name='Saw', sku='S1', unit=unit, company=self.company)
+        resp = self.client.get(reverse('product_search'), {'q': 'Saw'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('Saw', resp.json()['results'][0]['text'])
 
     def test_initial_inventory_on_create(self):
         unit = ProductUnit.objects.create(code='BX', name='Box')

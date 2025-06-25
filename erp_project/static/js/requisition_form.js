@@ -1,11 +1,38 @@
-let lineIndex=0;
+function searchUrl(type){
+  if(type==='Product') return '/inventory/products/search/';
+  if(type==='Service') return '/purchasing/services/search/';
+  if(type==='Office Supply') return '/purchasing/office-supplies/search/';
+  if(type==='Asset/Capex') return '/purchasing/assets/search/';
+  if(type==='IT/Software') return '/purchasing/it-software/search/';
+  return '';
+}
+
+function initSelect(select, url){
+  $(select).select2({
+    theme:'bootstrap-5',
+    ajax:{
+      url:url,
+      dataType:'json',
+      delay:250,
+      data:params=>({q:params.term}),
+      processResults:data=>data
+    },
+    width:'100%',
+    placeholder:'Search...'
+  }).on('select2:select', function(e){
+    const d=e.params.data;const row=$(this).closest('.row');
+    row.find('input[name="line_desc"]').val(d.description); row.find('input[name="line_unit"]').val(d.unit);
+  });
+}
+
 function addLine(){
   const container=document.getElementById('line-items');
+  const type=document.getElementById('id_type').value;
   const div=document.createElement('div');
   div.className='border p-2 mb-2';
   div.innerHTML=`<div class="row g-2 align-items-end">
     <div class="col-md-3"><label class="form-label">Name</label>
-      <input type="text" class="form-control" name="line_name">
+      <select class="form-select item-select" name="line_name" required></select>
     </div>
     <div class="col-md-3"><label class="form-label">Description</label>
       <input type="text" class="form-control" name="line_desc">
@@ -24,12 +51,15 @@ function addLine(){
   container.appendChild(div);
   div.querySelector('.remove-line').onclick=()=>{div.remove();updateSummary();};
   div.querySelector('input[name="line_qty"]').addEventListener('input', updateSummary);
+  const select=div.querySelector('.item-select');
+  initSelect(select, searchUrl(type));
   updateSummary();
 }
 function collect(){
   const items=[];
   document.querySelectorAll('#line-items > div').forEach(div=>{
-    const n=div.querySelector('input[name="line_name"]').value;
+    const sel=div.querySelector('.item-select');
+    const n=$(sel).find(':selected').text();
     const d=div.querySelector('input[name="line_desc"]').value;
     const j=div.querySelector('input[name="line_just"]').value;
     const q=div.querySelector('input[name="line_qty"]').value;

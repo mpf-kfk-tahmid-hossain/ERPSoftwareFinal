@@ -24,6 +24,10 @@ from .models import (
     PaymentApproval,
     SupplierInvoice,
     SupplierEvaluation,
+    ServiceItem,
+    OfficeSupplyItem,
+    AssetItem,
+    ITSoftwareItem,
     QuotationRequest,
     QuotationRequestLine,
     PurchaseRequisition,
@@ -36,7 +40,7 @@ from .utils import (
     validate_iban,
     validate_swift,
 )
-from inventory.models import Product, Warehouse, ProductSerial
+from inventory.models import Product, Warehouse, ProductSerial, ProductUnit
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 
 
@@ -532,6 +536,38 @@ class BankSearchView(LoginRequiredMixin, View):
         data = [{'name': b.name} for b in banks]
         return JsonResponse(data, safe=False)
 
+
+class ServiceItemSearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get('q', '')
+        items = ServiceItem.objects.filter(company=request.user.company, name__icontains=q, is_active=True)[:10]
+        data = [{'id': i.id, 'text': i.name, 'description': i.description, 'unit': i.unit.name} for i in items]
+        return JsonResponse({'results': data})
+
+
+class OfficeSupplyItemSearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get('q', '')
+        items = OfficeSupplyItem.objects.filter(company=request.user.company, name__icontains=q, is_active=True)[:10]
+        data = [{'id': i.id, 'text': i.name, 'description': i.description, 'unit': i.unit.name} for i in items]
+        return JsonResponse({'results': data})
+
+
+class AssetItemSearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get('q', '')
+        items = AssetItem.objects.filter(company=request.user.company, name__icontains=q, is_active=True)[:10]
+        data = [{'id': i.id, 'text': i.name, 'description': i.description, 'unit': i.unit.name} for i in items]
+        return JsonResponse({'results': data})
+
+
+class ITSoftwareItemSearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get('q', '')
+        items = ITSoftwareItem.objects.filter(company=request.user.company, name__icontains=q, is_active=True)[:10]
+        data = [{'id': i.id, 'text': i.name, 'description': i.description, 'unit': i.unit.name} for i in items]
+        return JsonResponse({'results': data})
+
 class PurchaseRequisitionListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
     template_name = 'requisition_list.html'
     model = PurchaseRequisition
@@ -867,3 +903,381 @@ class SupplierEvaluationCreateView(LoginRequiredMixin, View):
         score = request.POST.get('score', '').strip()
         SupplierEvaluation.objects.create(supplier=supplier, score=score, comments=request.POST.get('comments', ''), company=request.user.company)
         return redirect('supplier_detail', pk=supplier_id)
+
+
+class ServiceItemListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
+    template_name = 'service_list.html'
+    model = ServiceItem
+    search_fields = ['name', 'description']
+    filter_fields = []
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return ServiceItem.objects.filter(company=self.request.user.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.get_queryset()
+        context.update({
+            'page_obj': page,
+            'search': True,
+            'filters': [],
+            'sort_options': [('name', 'Name')],
+            'query_string': self.query_string(),
+            'sort_query_string': self.sort_query_string(),
+            'can_add_service': user_has_permission(self.request.user, 'add_serviceitem'),
+        })
+        return context
+
+
+@method_decorator(require_permission('add_serviceitem'), name='dispatch')
+class ServiceItemCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        units = ProductUnit.objects.all()
+        return render(request, 'service_form.html', {'units': units, 'name': '', 'description': '', 'unit_id': ''})
+
+    def post(self, request):
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'service_form.html', {'error': 'All fields required', 'units': units, 'name': name, 'description': request.POST.get('description', ''), 'unit_id': unit_id})
+        ServiceItem.objects.create(name=name, description=request.POST.get('description', ''), unit=unit, company=request.user.company)
+        return redirect('service_list')
+
+
+@method_decorator(require_permission('change_serviceitem'), name='dispatch')
+class ServiceItemUpdateView(LoginRequiredMixin, View):
+    def get_object(self, pk, user):
+        return get_object_or_404(ServiceItem, pk=pk, company=user.company)
+
+    def get(self, request, pk):
+        item = self.get_object(pk, request.user)
+        units = ProductUnit.objects.all()
+        context = {'units': units, 'name': item.name, 'description': item.description, 'unit_id': item.unit_id, 'item': item}
+        return render(request, 'service_form.html', context)
+
+    def post(self, request, pk):
+        item = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'service_form.html', {'error': 'All fields required', 'units': units, 'name': name, 'description': request.POST.get('description', ''), 'unit_id': unit_id, 'item': item})
+        item.name = name
+        item.description = request.POST.get('description', '')
+        item.unit = unit
+        item.save()
+        return redirect('service_list')
+
+
+@method_decorator(require_permission('delete_serviceitem'), name='dispatch')
+class ServiceItemDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        item = get_object_or_404(ServiceItem, pk=pk, company=request.user.company)
+        item.is_active = False
+        item.save()
+        return redirect('service_list')
+
+
+class OfficeSupplyItemListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
+    template_name = 'office_supply_list.html'
+    model = OfficeSupplyItem
+    search_fields = ['name', 'description']
+    filter_fields = []
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return OfficeSupplyItem.objects.filter(company=self.request.user.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.get_queryset()
+        context.update({
+            'page_obj': page,
+            'search': True,
+            'filters': [],
+            'sort_options': [('name', 'Name')],
+            'query_string': self.query_string(),
+            'sort_query_string': self.sort_query_string(),
+            'can_add_office': user_has_permission(self.request.user, 'add_officesupplyitem'),
+        })
+        return context
+
+
+@method_decorator(require_permission('add_officesupplyitem'), name='dispatch')
+class OfficeSupplyItemCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        units = ProductUnit.objects.all()
+        return render(request, 'office_supply_form.html', {'units': units, 'name': '', 'description': '', 'unit_id': ''})
+
+    def post(self, request):
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(
+                request,
+                'office_supply_form.html',
+                {
+                    'error': 'All fields required',
+                    'units': units,
+                    'name': name,
+                    'description': request.POST.get('description', ''),
+                    'unit_id': unit_id,
+                },
+            )
+        OfficeSupplyItem.objects.create(
+            name=name,
+            description=request.POST.get('description', ''),
+            unit=unit,
+            company=request.user.company,
+        )
+        return redirect('office_supply_list')
+
+
+@method_decorator(require_permission('change_officesupplyitem'), name='dispatch')
+class OfficeSupplyItemUpdateView(LoginRequiredMixin, View):
+    def get_object(self, pk, user):
+        return get_object_or_404(OfficeSupplyItem, pk=pk, company=user.company)
+
+    def get(self, request, pk):
+        item = self.get_object(pk, request.user)
+        units = ProductUnit.objects.all()
+        context = {
+            'units': units,
+            'name': item.name,
+            'description': item.description,
+            'unit_id': item.unit_id,
+            'item': item,
+        }
+        return render(request, 'office_supply_form.html', context)
+
+    def post(self, request, pk):
+        item = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(
+                request,
+                'office_supply_form.html',
+                {
+                    'error': 'All fields required',
+                    'units': units,
+                    'name': name,
+                    'description': request.POST.get('description', ''),
+                    'unit_id': unit_id,
+                    'item': item,
+                },
+            )
+        item.name = name
+        item.description = request.POST.get('description', '')
+        item.unit = unit
+        item.save()
+        return redirect('office_supply_list')
+
+
+@method_decorator(require_permission('delete_officesupplyitem'), name='dispatch')
+class OfficeSupplyItemDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        item = get_object_or_404(OfficeSupplyItem, pk=pk, company=request.user.company)
+        item.is_active = False
+        item.save()
+        return redirect('office_supply_list')
+
+
+class AssetItemListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
+    template_name = 'asset_item_list.html'
+    model = AssetItem
+    search_fields = ['name', 'description']
+    filter_fields = []
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return AssetItem.objects.filter(company=self.request.user.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.get_queryset()
+        context.update({
+            'page_obj': page,
+            'search': True,
+            'filters': [],
+            'sort_options': [('name', 'Name')],
+            'query_string': self.query_string(),
+            'sort_query_string': self.sort_query_string(),
+            'can_add_asset': user_has_permission(self.request.user, 'add_assetitem'),
+        })
+        return context
+
+
+@method_decorator(require_permission('add_assetitem'), name='dispatch')
+class AssetItemCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        units = ProductUnit.objects.all()
+        return render(request, 'asset_item_form.html', {'units': units, 'name': '', 'description': '', 'unit_id': ''})
+
+    def post(self, request):
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'asset_item_form.html', {
+                'error': 'All fields required',
+                'units': units,
+                'name': name,
+                'description': request.POST.get('description', ''),
+                'unit_id': unit_id,
+            })
+        AssetItem.objects.create(name=name, description=request.POST.get('description', ''), unit=unit, company=request.user.company)
+        return redirect('asset_item_list')
+
+
+@method_decorator(require_permission('change_assetitem'), name='dispatch')
+class AssetItemUpdateView(LoginRequiredMixin, View):
+    def get_object(self, pk, user):
+        return get_object_or_404(AssetItem, pk=pk, company=user.company)
+
+    def get(self, request, pk):
+        item = self.get_object(pk, request.user)
+        units = ProductUnit.objects.all()
+        context = {
+            'units': units,
+            'name': item.name,
+            'description': item.description,
+            'unit_id': item.unit_id,
+            'item': item,
+        }
+        return render(request, 'asset_item_form.html', context)
+
+    def post(self, request, pk):
+        item = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'asset_item_form.html', {
+                'error': 'All fields required',
+                'units': units,
+                'name': name,
+                'description': request.POST.get('description', ''),
+                'unit_id': unit_id,
+                'item': item,
+            })
+        item.name = name
+        item.description = request.POST.get('description', '')
+        item.unit = unit
+        item.save()
+        return redirect('asset_item_list')
+
+
+@method_decorator(require_permission('delete_assetitem'), name='dispatch')
+class AssetItemDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        item = get_object_or_404(AssetItem, pk=pk, company=request.user.company)
+        item.is_active = False
+        item.save()
+        return redirect('asset_item_list')
+
+
+class ITSoftwareItemListView(LoginRequiredMixin, AdvancedListMixin, TemplateView):
+    template_name = 'it_item_list.html'
+    model = ITSoftwareItem
+    search_fields = ['name', 'description']
+    filter_fields = []
+    default_sort = 'name'
+
+    def base_queryset(self):
+        return ITSoftwareItem.objects.filter(company=self.request.user.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = self.get_queryset()
+        context.update({
+            'page_obj': page,
+            'search': True,
+            'filters': [],
+            'sort_options': [('name', 'Name')],
+            'query_string': self.query_string(),
+            'sort_query_string': self.sort_query_string(),
+            'can_add_it': user_has_permission(self.request.user, 'add_itsoftwareitem'),
+        })
+        return context
+
+
+@method_decorator(require_permission('add_itsoftwareitem'), name='dispatch')
+class ITSoftwareItemCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        units = ProductUnit.objects.all()
+        return render(request, 'it_item_form.html', {'units': units, 'name': '', 'description': '', 'unit_id': ''})
+
+    def post(self, request):
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'it_item_form.html', {
+                'error': 'All fields required',
+                'units': units,
+                'name': name,
+                'description': request.POST.get('description', ''),
+                'unit_id': unit_id,
+            })
+        ITSoftwareItem.objects.create(name=name, description=request.POST.get('description', ''), unit=unit, company=request.user.company)
+        return redirect('it_item_list')
+
+
+@method_decorator(require_permission('change_itsoftwareitem'), name='dispatch')
+class ITSoftwareItemUpdateView(LoginRequiredMixin, View):
+    def get_object(self, pk, user):
+        return get_object_or_404(ITSoftwareItem, pk=pk, company=user.company)
+
+    def get(self, request, pk):
+        item = self.get_object(pk, request.user)
+        units = ProductUnit.objects.all()
+        context = {
+            'units': units,
+            'name': item.name,
+            'description': item.description,
+            'unit_id': item.unit_id,
+            'item': item,
+        }
+        return render(request, 'it_item_form.html', context)
+
+    def post(self, request, pk):
+        item = self.get_object(pk, request.user)
+        name = request.POST.get('name', '').strip()
+        unit_id = request.POST.get('unit')
+        unit = get_object_or_404(ProductUnit, pk=unit_id) if unit_id else None
+        if not name or not unit:
+            units = ProductUnit.objects.all()
+            return render(request, 'it_item_form.html', {
+                'error': 'All fields required',
+                'units': units,
+                'name': name,
+                'description': request.POST.get('description', ''),
+                'unit_id': unit_id,
+                'item': item,
+            })
+        item.name = name
+        item.description = request.POST.get('description', '')
+        item.unit = unit
+        item.save()
+        return redirect('it_item_list')
+
+
+@method_decorator(require_permission('delete_itsoftwareitem'), name='dispatch')
+class ITSoftwareItemDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        item = get_object_or_404(ITSoftwareItem, pk=pk, company=request.user.company)
+        item.is_active = False
+        item.save()
+        return redirect('it_item_list')
